@@ -89,7 +89,6 @@ class Simulator:
         nest.SetKernelStatus(
             {'rng_seeds' : range(msd + N_vp + 1, msd + 2 * N_vp + 1)})
         nest.SetStatus([0], [{"resolution": self.res}])
-        self.nest_kernel_status = nest.GetKernelStatus()
 
     def set_neurons(self):
         assert self.N_neurons % 2 == 0, 'N_neurons must be even number'
@@ -203,22 +202,12 @@ class Simulator:
             self.events.append(self.trial_start + self.simtime * n)
         nest.Simulate(self.simtime)
 
-    def run(self, save=True):
-        self.set_kernel()
-        self.set_neurons()
-        self.set_background()
-        self.set_conn_fixed()
-        self.set_spike_rec()
-        self.set_state_rec()
-        print('Starting simulation')
-        nest.Simulate(self.simtime)
-        if save:
-            self.save_data(overwrite=True)
-
     def simulate(self):
+        self.simtime = (self.trial_start + self.trial_duration) * self.num_trials
         nest.Simulate(self.simtime)
 
     def generate_data_dict(self):
+        self.nest_kernel_status = nest.GetKernelStatus()
         data = {}
         if any(hasattr(self, k) for k in ['spikes_ex', 'spikes_in', 'vm_ex', 'vm_in']):
             data['params'] = {k: getattr(self, k) for k in self._param_keys
@@ -241,8 +230,10 @@ class Simulator:
         if hasattr(self, 'events'):
             data.update({
                 'epochs': {
-                    'events': self.events,
+                    'times': self.events,
                     'durations': [self.trial_duration] * self.num_trials}})
+        conns = nest.GetConnections(source=self.nodes, target=self.nodes)
+        data.update({'connections': list(nest.GetStatus(conns))})
         return data
 
     @property
@@ -267,14 +258,6 @@ class Simulator:
         if not overwrite and os.path.exists(fnameout):
             raise IOError('File {} exist, use overwrite=True.'.format(fnameout))
         np.savez(fnameout, data=self.data)
-
-    def get_weights(self):
-        conns = nest.GetConnections(source=self.nodes_in,
-                                    synapse_model='static_synapse')
-        self.I_weights = nest.GetStatus(conns, 'weight')
-        conns = nest.GetConnections(source=self.nodes_ex,
-                                    synapse_model='static_synapse')
-        self.E_weights = nest.GetStatus(conns, 'weight')
 
     def save_raster(self):
         import nest.raster_plot

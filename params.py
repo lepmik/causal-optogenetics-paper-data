@@ -36,7 +36,6 @@ parameters = {
     'p_rate'         : p_rate * Hz, # Cortical Poisson input rate to neurons
     'N_neurons'      : N_neurons, # Total number of neurons
     'N_rec'          : N_neurons, # Number of neurons to record from
-    'simtime'        : np.nan, # Simulation time
     'res'            : 0.1 * ms, # Temporal resolution for simulation Delta t
     'delay'          : 1.5 * ms, # Synaptic delay
     'nr_ports'       : nr_ports,
