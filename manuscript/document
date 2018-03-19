@@ -1,0 +1,43 @@
+\documentclass[]{article}
+
+%opening
+\title{}
+\author{}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Perturbations are typically necessary to get at causal interactions in a network. The advent of optogenetics has enabled precise, genetically targeted perturbations. However, activation is generally spatially distributed. Here we use the nonlinear refractory period as an instrumental variable to enable a meaningful causal inference algorithm. We show that our findings are both precise in simulation and meaningful when applied to real data. Optogenetics can meaningfully allow the estimation of causal connections.
+\end{abstract}
+
+\section{idea}
+Idea 0: Today’s standard is probably to ignore the long distance excitation and simply correlate the stimulation with the activity of all neurons:
+W=1/N \sum_t Stim(t)*Spikes_j(t+Dt)
+The problem with this idea is that this is really the sum over all the affected neurons. Many of which will have the same Dt.
+
+Idea 1: use refractory period as an instrumental variable
+Neurons spike relatively rarely. And arguably are very noisy at spiking.
+Hence we can replace the above equation with
+W=1/N \sum_t Stim(t)*Spikes_j(t+Dt)
+    -1/N \sum_t StimRefractory(t)*Spikes_j(t+Dt)
+Here Stim is during a time where the neuron is nonrefractory and StimRefractory a time where it is. The number of events should be matched. Random sampling to keep them the same?
+However the network state may be different between refractory times and non-refractory times. So we would like to correct:
+W=1/N \sum_t Stim(t)*Spikes_j(t+Dt)
+    -1/N \sum_t StimRefractory(t)*Spikes_j(t+Dt)
+    -1/N \sum_t Nostim(t)*Spikes_j(t+Dt)
+    +1/N \sum_t NostimRefractory(t)*Spikes_j(t+Dt)
+So this will linearly correct for the differences in network state that are due to refractory periods
+
+Idea 2: use temporal differences (before vs after stimulation)
+Same as above but replace Spikes_j(t+Dt) with (Spikes_j(t+Dt)-Spikes_j(t))
+This assumes that the changes in the network are more meaningful than the network. It also makes the causal inference be cleaner.
+
+Idea 3: whenever making comparisons, use propensity score matching to make the distributions more similar
+Works like this:
+First fit a model that predicts the probability of being refractory given the past of the network and also the past of any external / internal stimulus. That would probably be either a GLM or, better an Ari Benjamin style ML code. We could easily use his code
+Redo as in idea 2 but now in the two sums make it so that we have cases of matched probabilty of being refractory.
+
+
+\end{document}

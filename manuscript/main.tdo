@@ -1,0 +1,17 @@
+\contentsline {todo}{cite}{2}
+\contentsline {todo}{cite card 1995, found in cameron}{2}
+\contentsline {todo}{cite TSOLS}{3}
+\contentsline {todo}{perturbation should spread by 1/r2 and all perturbed connections should be tested, here logit will fail.}{3}
+\contentsline {todo}{figure showing stimulating of network}{3}
+\contentsline {todo}{figure comparing methods with real weights}{3}
+\contentsline {todo}{figure showing power (true false vs n stimulations)}{3}
+\contentsline {todo}{data showing false positive/negative comparing stimulation patterns, comparing stimulation durations}{3}
+\contentsline {todo}{data showing synchrounous regular does not work (can be put together with regular stim. pattern)}{3}
+\contentsline {todo}{Should we show that ccg or gml give lots of false positives? without considering stimulation?}{3}
+\contentsline {todo}{I think I would choose a couple of examples that emulate what an experimentalist would do (a) periodic slow (bad power not enough data) (b) periodic fast (good power but confounded) (c) random fast (good everything) But I would then also redo all of them with a "weak network" model where therefore the assumptions are pretty well matched an also a "strong network" model where neurons have massive influence on one another (maybe oscillate or something) and hence the weakness assumption that is behind the IV justification breaks down }{3}
+\contentsline {todo}{cite the book or whatever}{11}
+\contentsline {todo}{this will not work if you stimulate non random since then you may correlate u with sr, u is still driving x but asynchronously so sr is still uncorrelated with u.}{11}
+\contentsline {todo}{cite wald}{11}
+\contentsline {todo}{Note that if we assume that the stimulation is so strong that the network effect $ u_{ns} $ has a negligible effect on $ x_{s} $ and that due to synaptic and axonal delay the effect of $ u_{s} $ is unable to affect $ x_{s} $ in it's respective stimulus response time. Then a conventional method like logistic regression will work.}{12}
+\contentsline {todo}{make sure delay is correctly inserted}{13}
+\contentsline {todo}{small perturbations on noisy networks will not yield a correlation between AC because the variance in stimulus response time in A will not be explained by the variance in spike times of C. Small variations of onset times in A relative to C will over many trials will wash out correlations between AC and at the same time strengthen correlations between BC. The only way to get a strong correlation between AC is to impose a short and strong stimulus effectively making AB spike coincidentally.}{13}

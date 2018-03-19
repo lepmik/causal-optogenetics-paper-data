@@ -1,0 +1,12 @@
+numpy
+scipy
+scikit-learn
+matplotlib
+seaborn
+neo
+elephant
+pandas
+quantities
+jupyter
+ipython
+cython

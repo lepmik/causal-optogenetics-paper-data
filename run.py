@@ -1,16 +1,17 @@
+import sys
 from simulator import Simulator
-from params import parameters
-import time
+import imp
+import os.path as op
 
-working_name = 'cond'
+if len(sys.argv) != 2:
+    raise IOError('Usage: "python run.py parameters"')
 
-sim = Simulator(parameters, fname=working_name)
-sim.set_kernel()
-sim.set_neurons()
-sim.set_connections()
-sim.set_stimulation()
-sim.set_spike_rec()
-sim.set_state_rec()
-sim.simulate_trials()
-sim.save_data(overwrite=True)
-sim.save_raster()
+param_module = sys.argv[1]
+jobname = param_module.replace('.py', '')
+currdir = op.dirname(op.abspath(__file__))
+f, p, d = imp.find_module(jobname, [currdir])
+parameters = imp.load_module(jobname, f, p, d).parameters
+
+sim = Simulator(parameters, mpi=False, data_path='results',
+                fname=jobname)
+sim.simulate(save=True, progress_bar=True)
