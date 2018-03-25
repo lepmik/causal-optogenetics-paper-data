@@ -1,0 +1,4 @@
+#!/bin/bash
+for FILE in ./$1*.svg; do
+  inkscape -D -A -z --file="${FILE}" --export-pdf="${FILE/svg/pdf}"
+done

@@ -1,11 +1,28 @@
 \begin{thebibliography}{}
 
+\bibitem[Aravanis et~al., 2007]{Aravanis2007}
+Aravanis, A.~M., Wang, L.~P., Zhang, F., Meltzer, L.~A., Mogri, M.~Z.,
+  Schneider, M.~B., and Deisseroth, K. (2007).
+\newblock {An optical neural interface: in vivo control of rodent motor cortex
+  with integrated fiberoptic and optogenetic technology.}
+\newblock {\em J. Neural Eng.}, 4(3):S143--S156.
+
 \bibitem[English et~al., 2017]{English2017}
 English, D.~F., McKenzie, S., Evans, T., Kim, K., Yoon, E., and Buzs{\'{a}}ki,
   G. (2017).
 \newblock {Pyramidal Cell-Interneuron Circuit Architecture and Dynamics in
   Hippocampal Networks}.
 \newblock {\em Neuron}, 96(2):505--520.
+
+\bibitem[Ho et~al., 2017]{Ho2017}
+Ho, A. H.~P., Kim, D., and Somekh, M.~G. (2017).
+\newblock {\em {Handbook of photonics for biomedical engineering}}.
+
+\bibitem[Sayer et~al., 1990]{Sayer1990}
+Sayer, R.~J., Friedlander, M.~J., and Redman, S.~J. (1990).
+\newblock {The time course and amplitude of EPSPs evoked at synapses between
+  pairs of CA3/CA1 neurons in the hippocampal slice.}
+\newblock {\em J. Neurosci.}, 10(3):826--836.
 
 \bibitem[Stark and Abeles, 2009]{Stark2009}
 Stark, E. and Abeles, M. (2009).

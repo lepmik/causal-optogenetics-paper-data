@@ -73,102 +73,68 @@ worry is this really correct? Yes, its . IVs are (under the right assumptions) a
 The IV technique can also be employed if one seeks to estimate the causal connectivity between neuron pairs. In this study we begin by showing how a simple network of three leaky integrate and fire (LIF) neurons can be heavily confounded under the right circumstances when simulating optogenetic targeting as direct current pulses. We then show that using the refractory period as an instrumental variable we are able to produce good estimates of causal connectivity. Furthermore we show that the method works in a large (N=1250) network of LIF neurons. With this data at hand we compare the IV method with a logistic regression.
 
 \section{Results}
-\begin{figure}
-\makeatletter
-\renewcommand\p@subfigure{}
-\makeatother
-\begin{subfigure}{\textwidth} \includegraphics[scale=1]{light-decay}
-\caption{} \label{fig:concept:1}
-\end{subfigure}
-
-\medskip
-\begin{subfigure}{\textwidth} \includegraphics[scale=1]{opto-powerlaw}
-\caption{} \label{fig:concept:2}
-\end{subfigure}
-\caption{Sketch of the problem at hand \label{fig:concept}}
+\begin{figure}\includegraphics[scale=1]{opto-powerlaw}
+\caption{Spatial extent of optogenetic stimulus. Due to scattering and geometric loss the light intensity (I cyan) plotted as percentage of intensity exiting the optogenetic fiber follows approximately an inverse square law $ z^{-2} $ where $ z $ is the distance from the fiber; see methods. If neurons are uniformly distributed the number of optogenetically affected neurons increase by $ z^{2} $ (N black) rendering the probability of activating a neuron approximately constant (IN blue). \label{fig:concept}}
 \end{figure}
-\todo[inline]{perturbation should spread by 1/r2 and all perturbed connections should be tested, here logit will fail.}
-\todo[inline]{figure showing stimulating of network}
-\todo[inline]{figure comparing methods with real weights}
-\todo[inline]{figure showing power (true false vs n stimulations)}
-\todo[inline]{data showing false positive/negative comparing stimulation patterns, comparing stimulation durations}
 \todo[inline]{data showing synchrounous regular does not work (can be put together with regular stim. pattern)}
-\todo[inline]{Should we show that ccg or gml give lots of false positives? without considering stimulation?}
 \todo[inline]{I think I would choose a couple of examples that emulate what an experimentalist would do
 (a) periodic slow (bad power not enough data)
 (b) periodic fast (good power but confounded)
 (c) random fast (good everything)
 But I would then also redo all of them with a "weak network" model where therefore the assumptions are pretty well matched an also a "strong network" model where neurons have massive influence on one another (maybe oscillate or something) and hence the weakness assumption that is behind the IV justification breaks down }
-Consider three neurons (A,B,C) where A and B receives optogenetic stimulation and only B is connected to C \cref{fig:intro}\labelcref{fig:intro:1}. The stimulation induces a strong correlation between A and B \cref{fig:intro}\labelcref{fig:intro:1,fig:intro:2,fig:intro:3,fig:intro:4}, and thus the monosynaptic connection between B and C is thus spuriously inherited between A and C confounding the system by rendering the cross correlation histograms (CCHs) between BC and AC statistically indistinguishable as seen in \cref{fig:intro}\labelcref{fig:intro:5,fig:intro:6} respectively.
+Consider three neurons (A,B,C) where A and B receives optogenetic stimulation and only B is connected to C \cref{fig:intro}\labelcref{fig:intro:1}. The stimulation induces a strong correlation between A and B \cref{fig:intro}\labelcref{fig:intro:1,fig:intro:2,fig:intro:3}, and thus the monosynaptic connection between B and C is thus spuriously inherited between A and C confounding the system by rendering the cross correlation histograms (CCHs) between BC and AC statistically indistinguishable as seen in \cref{fig:intro}\labelcref{fig:intro:3} middle and lower right panel respectively.
 \begin{figure} 
 \makeatletter
 \renewcommand\p@subfigure{}
 \makeatother
-\begin{subfigure}{0.485\textwidth} \includegraphics[scale=1.3]{simple}
+\begin{subfigure}{0.485\textwidth} \includegraphics[scale=1]{simple}
 \caption{} \label{fig:intro:1}
 \end{subfigure}\hfill
-\begin{subfigure}{0.485\textwidth} \includegraphics[scale=.25]{traces}
+\begin{subfigure}{0.485\textwidth} \includegraphics[scale=1]{raster}
 \caption{} \label{fig:intro:2}
 \end{subfigure}
 
 \medskip
-\begin{subfigure}{0.485\textwidth} \includegraphics[scale=.25]{raster}
+\begin{subfigure}{\textwidth}\centering \includegraphics[scale=1]{xcorr}
 \caption{} \label{fig:intro:3}
-\end{subfigure}\hfill
-\begin{subfigure}{0.485\textwidth} \includegraphics[scale=.25]{xcorr}
-\caption{} \label{fig:intro:4}
 \end{subfigure}
-\caption{Sketch of a simple network containing three neurons depicted in red stimulated with blue laser light trough optogenetic activation. Invoked spikes due to stimulation is depicted in (b) upper panel with corresponding voltage traces in the lower panel. The neurons A and B are stimulated multiple trials and the  histogram of all trials are shown in (c) upper panel with the corresponding raster plot for each trial in the lower panel. Horizontal and vertical axes in correlograms represents respectively time lag in ms and counts of coincident spikes in bins of 1 ms for \labelcref{fig:intro:4} \label{fig:intro}}
-\end{figure}
-
-\begin{figure}
-\begin{subfigure}{0.485\textwidth} \includegraphics[scale=.25]{xcorr_highres_BC}
-\caption{} \label{fig:cchvswald:1}
-\end{subfigure}\hfill
-\begin{subfigure}{0.485\textwidth} \includegraphics[scale=.25]{xcorr_highres_AC}
-\caption{} \label{fig:cchvswald:2}
-\end{subfigure}
-
-\medskip
-\begin{subfigure}{0.485\textwidth} \includegraphics[scale=.25]{wald_BC}
-\caption{} \label{fig:cchvswald:3}
-\end{subfigure}\hfill
-\begin{subfigure}{0.485\textwidth} \includegraphics[scale=.25]{wald_AC}
-\caption{} \label{fig:cchvswald:4}
-\end{subfigure}
-\caption{Cross correlograms for all neurons are depicted in (d) and the high resolution zoom of BC and AC are visualized in (e) and (f) respectively. Horizontal and vertical axes in correlograms represents respectively time lag in ms and counts of coincident spikes in bins of 0.1 ms for \labelcref{fig:cchvswald:1,fig:cchvswald:2}. \label{fig:cchvswald}}
+\caption{Sketch of a simple network containing three neurons depicted in red stimulated with blue laser light due to optogenetic activation. The neurons A and B are stimulated 30000 trials and the  histogram of all trials are shown in \labelcref{fig:intro:2} upper panel with the corresponding raster plot for each trial in the lower panel. Horizontal and vertical axes in correlation histograms represents time lag in ms and counts of coincident spikes in bins of 1 ms in \labelcref{fig:intro:3} \label{fig:intro}}
 \end{figure}
 
 \begin{figure}
 \makeatletter
 \renewcommand\p@subfigure{}
 \makeatother
-\begin{subfigure}{0.485\textwidth} \includegraphics[scale=.2]{network_stim}
-\caption{} \label{fig:network-power:1}
+\begin{subfigure}{0.485\textwidth} \includegraphics[scale=1]{wald_BC}
+\caption{} \label{fig:cchvswald:1}
 \end{subfigure}\hfill
-\begin{subfigure}{0.485\textwidth}\includegraphics[scale=.2]{wald_network}
-\caption{} \label{fig:network-power:2}
+\begin{subfigure}{0.485\textwidth} \includegraphics[scale=1]{wald_AC}
+\caption{} \label{fig:cchvswald:2}
 \end{subfigure}
-
-\caption{Power analysis of IV estimator. \label{fig:network-power}}
+\caption{Wald estimator correctly estimates causal connectivity. The confounded network of three neurons (A,B,C) \cref{fig:intro}\labelcref{fig:intro:1} is disentangled with the Wald estimator quickly converging to $ BC \approx 0.2, AC \approx 0 $. Insets represent high resolution zoom of cross correlation histograms of BC and AC respectively where horizontal and vertical axes in correlation histograms represents time lag in ms and counts of coincident spikes in bins of 0.1 ms for \labelcref{fig:cchvswald:1,fig:cchvswald:2}. \label{fig:cchvswald}}
 \end{figure}
 
 \begin{figure}
-\begin{subfigure}{0.485\textwidth} \includegraphics[scale=.25]{false_positive}
+\includegraphics[scale=1]{mse_pos}
+\caption{Mean square error (MSE) of Wald estimator in a recurrent neural network of three different parameter settings. The MSE as a function of number of trials shown on a logarithmic scale for asynchronous network activity when varying the relative inhibition yielding higher firing rate. \label{fig:error}}
+\end{figure}
+
+\begin{figure}
+\begin{subfigure}{0.485\textwidth} \includegraphics[scale=1]{false_positive}
 \caption{} \label{fig:network-class:1}
 \end{subfigure}\hfill
-\begin{subfigure}{0.485\textwidth} \includegraphics[scale=.25]{false_negative}
+\begin{subfigure}{0.485\textwidth} \includegraphics[scale=1]{false_negative}
 \caption{} \label{fig:network-class:2}
 \end{subfigure}
 
 \medskip
-\begin{subfigure}{0.485\textwidth} \includegraphics[scale=.25]{fit_wald}
+\begin{subfigure}{0.46\textwidth} \includegraphics[scale=1]{fit_wald_pos}
 \caption{} \label{fig:network-class:3}
 \end{subfigure}\hfill
-\begin{subfigure}{0.485\textwidth} \includegraphics[scale=.25]{fit_cch}
+\begin{subfigure}{0.6\textwidth} \includegraphics[scale=1]{fit_cch_pos}
 \caption{} \label{fig:network-class:4}
 \end{subfigure}
-\caption{Comparing CCH and logit with IV \labelcref{fig:network-class:1,fig:network-class:2}. \label{fig:network-class}}
+\caption{False estimates and goodness of fit. Panel \labelcref{fig:network-class:1} show false positives for the cross correlation histogram (cch) method, logistic regression (logit) and the Wald IV estimator (wald). False negatives for cch and wald is shown in \labelcref{fig:network-class:2}. Positive estimates of weight as a function of true weight is scattered for the wald estimator in \labelcref{fig:network-class:3} and cch in \labelcref{fig:network-class:4} color coded by the size of perturbation intensity. \label{fig:network-class}}
 \end{figure}
 
 \section{Discussion}
@@ -195,8 +161,12 @@ Broad opportunity, cite RDD, cite diff-in-diff etc, broad overview of the promis
 %Constructing good IVs
 Multiple illuminations, designed sticky opsins
 
+%Wald is pairwise, GLMs require multiple neurons
+Pairwise Wald vs GLM multiple neurons
 
-\FloatBarrier
+%Inhibitory connections?
+Inhibitory connections may show up as negative Wald, but needs proper thinking
+
 \section{Methods}
 \subsection{Instrumental variable estimation}
 A simple approximation of the connectivity strength between putative sender and receiver neurons $ x $ and $ y $ respectively can be to ignore long distance excitation and simply calculate the relation between the spike times in $ x $ and $ y $ with a regression model given by
@@ -282,27 +252,57 @@ The statistical tests giving the probabilities $ p_{diff} $ and $ p_{fast} $ wer
 p(N|\lambda(m)) = 1 - \sum_{k=0}^{N-1}\frac{e^{-\lambda(m)}\lambda(m)^k}{k!} - \frac{e^{-\lambda(m)}\lambda(m)^N}{2N!}
 \label{eq:poissoncontcor}
 \end{equation}
-Here $ \lambda $ represents the counts at bin $ m $ and $ N $ is the number of bins considered.
-\subsection{Simulated network}
-The first simple network consists of three leaky integrate and fire (LIF) neurons given in \cref{eq:LIF}:
+Here $ \lambda $ represents the counts at bin $ m $ and $ N $ is the number of bins considered. To estimate the connection weight between pairs we used the spike transmission probability defined in \cite{English2017} as 
+\begin{align}
+P_{trans} = \frac{1}{n}\sum_{m=4ms}^{8} CCH(m) - \lambda_{Gauss}(m),
+\end{align}
+where $ n $ is the number of spikes detected in the presynaptic neuron.
+\subsection{Simulated network} \todo{refer to parameter table}
+To simulate a recurrent network of $ 1000 $ excitatory and $ 250 $ inhibitory neurons we used the leaky integrate and fire (LIF) model given by
 \begin{equation}
 	\tau \dot{V}_{i}(t) = -(V_{i}(t) - E_{L}) + RI_{i}(t).
     \label{eq:LIF}
 \end{equation}
-When the membrane potential $ V_{i} $ of neuron $ i $ reaches a threshold $ \theta $ an action potential is emitted and the depolarization is reset to the leak potential $ E_{L} $ followed by an absolute refractory period $ \tau_{rp} $. The membrane time constant is represented by $ \tau $ and $ I_{i}(t) $ denotes the synaptic currents arriving at the soma modeled as a sum of alpha functions given by
+When the membrane potential $ V_{i} $ of neuron $ i $ reaches a threshold $ \theta $ an action potential is emitted and reset to the leak potential $ E_{L} $ followed by an absolute refractory period $ \tau_{rp} $. The membrane time constant is represented by $ \tau $ and $ I_{i}(t) $ denotes the synaptic currents arriving at the soma modeled as a sum of alpha functions given by
 \begin{equation}
 	\label{eq:syn}
-	RI_{i}(t) = \sum_{j}J_{ij}\sum_{k}t\exp(-(t-t_{j}^{k})/\tau_{syn}) - D.
+	RI_{i}(t) = \sum_{j}J_{ij}\sum_{k}t\exp(-(t-t_{j}^{k})/\tau_{syn}).
 \end{equation}\todo{make sure delay is correctly inserted}
-Different synapses are denoted by $ j = 1,...,C+C_{ext} $ with post synaptic potential (PSP) amplitude (synaptic efficacy) denoted as $ J_{ij} $. When neuron $ j $ emits it's $ k $'th spike at time $ t_{j}^k $ it arrives at neuron $ i $ at $ t = t_{j}^k + D $ where $ D $ denotes a transmission delay. Furthermore all neurons are driven by an external Poisson drive and an Gaussian noise process given in \cref{eq:channelgauss}.
-\begin{equation}
-	I(t) = mean + std * N_j for t_0 + j dt \leq t < t_0 + (j-1) dt 
-    \label{eq:channelgauss}
-\end{equation}
-where $N_j$ are Gaussian random numbers with unit standard deviation and $t_0$ is 
-the device onset time.
-\todo[inline]{small perturbations on noisy networks will not yield a correlation between AC because the variance in stimulus response time in A will not be explained by the variance in spike times of C. Small variations of onset times in A relative to C will over many trials will wash out correlations between AC and at the same time strengthen correlations between BC. The only way to get a strong correlation between AC is to impose a short and strong stimulus effectively making AB spike coincidentally.}
+Different synapses are denoted by $ j = 1,...,C+C_{ext} $ with post synaptic potential (PSP) amplitude (synaptic efficacy) denoted as $ J_{ij} $. When neuron $ j $ emits it's $ k $'th spike at time $ t_{j}^k $ it arrives at neuron $ i $ at $ t = t_{j}^k + D $ where $ D $ denotes a transmission delay. Furthermore all neurons are driven by an external Poisson drive.
 
+Synaptic efficacies were log normally distributed with a minimum and maximum amplitude at $ 0.05 mV $ and $ 2.05 mV $ respectively within bounds of experimental findings \cite{Sayer1990,Mason1991} as shown in \cref{fig:syndist}.
+\missingfigure{Figure showing synaptic distribution \label{fig:syndist}}
+
+To find suitable parameters yielding asynchronous activity as measured by the population correlation coefficient shown in \cref{fig:cchvswald} we performed several parameter sweeps and picked three parameter sets accordingly
+\missingfigure{parameter sweep \label{fig:sweep}}
+\missingfigure{CC distribution \label{fig:CC}}
+\missingfigure{CV distribution \label{fig:CV}}
+%and an Gaussian noise process given in \cref{eq:channelgauss}.
+%\begin{equation}
+%	I(t) = mean + std * N_j for t_0 + j dt \leq t < t_0 + (j-1) dt 
+%    \label{eq:channelgauss}
+%\end{equation}
+%where $N_j$ are Gaussian random numbers with unit standard deviation and $t_0$ is 
+%the device onset time.
+\todo[inline]{small perturbations on noisy networks will not yield a correlation between AC because the variance in stimulus response time in A will not be explained by the variance in spike times of C. Small variations of onset times in A relative to C will over many trials will wash out correlations between AC and at the same time strengthen correlations between BC. The only way to get a strong correlation between AC is to impose a short and strong stimulus effectively making AB spike coincidentally.}
+\subsection{Perturbation intensity}
+In order to replicate an optogenetic experiment we modeled transmission of light through brain tissue with the Kubelka-Munk model for diffuse scattering in planar, homogeneous, ideal diffusing media given by
+\begin{align}
+T = \frac{1}{Sz + 1}.
+\end{align}
+Here $ T $ denotes a transmisison fraction, $ S = 10.3 mm^{-1} $ is the scattering coefficient for mice \cite{Aravanis2007} and $ z $ is the distance from a light source \cite{Ho2017}. Further we combined diffusion with geometric loss assuming that absorption is negligible as in \cite{Aravanis2007} and computed the intensity as presented in \cref{fig:concept} by
+\begin{align}
+\frac{I(z)}{I(z=0)} = \frac{\rho^2}{(Sz + 1)(z + \rho)^2}
+\end{align}
+where
+\begin{align}
+\rho = r\sqrt{\left(\frac{n}{NA}\right)^2 - 1},
+\end{align}
+and $ r = 100\mu m $ is the radius of the optical fiber, $ NA = 0.37 $ is the numerical aperture of the optical fiber and $ n = 1.36 $ is the refraction index for gray matter \cite{Ho2017}.
+
+To estimate the distribution of light intensity on affected neurons we assumed a neuron density of $ 10^5 Nmm^{-3} $ and foo und the volume of a cut cone that could contain $ 950 $ ``source" excitatory neurons which were found to yield the depth $ z = 0.175 mm $. The last $ 50 $ of the excitatory neurons was used as the ``target" population which together with the inhibitory neurons were not perturbed directly by the light stimulus.
+
+In order to keep the stimulus model as simple as possible we used a perturbation strength of $ 10 pA $ which was found suitable by investigating the percentage of successful stimulations to be around $ 50\% $.
 
 %-------------------------------------------------------------------------------
 %                                 REFS

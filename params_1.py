@@ -33,8 +33,8 @@ parameters = {
     'J_low'          : 0.05,
     'p_var'          : .5, # percentage variation of mean in lognormal dist
     # Stimulation parameters
-    'stim_nodes_ex'   : tuple(np.arange(1,602,1)),
-    'stim_nodes_in'   : (),
+    'stim_N_ex'       : 950,
+    'stim_N_in'       : 0,
     'stim_dist'       : 'poisson',
     'stim_amp_ex'     : 10.0, # pA
     'stim_amp_in'     : 0.0, # pA
@@ -42,7 +42,10 @@ parameters = {
     'stim_max_period' : 150, # only applies to poisson
     'stim_duration'   : 2.0, # ms
     'stim_N'          : 30000,
-    # analysis params
-    'latency': 6,
-    'winsize': 4
+    # Optogenetics
+    'r': 100e-3, # 100 um radius of fiber
+    'n': 1.36, # refraction index of gray matter
+    'NA': 0.37, # Numerical Aperture of fiber
+    'S': 10.3, # mm^-1 scattering index for rat, mouse = 11.2
+    'density': 10e4, # N/mm³
 }

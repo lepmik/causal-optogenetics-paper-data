@@ -31,8 +31,11 @@ def fix_figure(padLegend=None, padHeight=0):
                      widthAx / widthTot, heightAx / heightTot + padHeight])
     plt.draw()
 
-def savefig(fig, fname, **kwargs):
-    fig.savefig(op.join('manuscript',fname + '.pdf'), **kwargs)
+def savefig(fig, fname, ext='.svg', **kwargs):
+    if ext[0] != '.':
+        ext = '.' + ext
+    fname = op.splitext(fname)[0]
+    fig.savefig(op.join('manuscript',fname + ext), **kwargs)
 
 def coef_var(spike_trains):
     """
@@ -114,11 +117,13 @@ def csv_append_dict(fname, dictionary):
         df.to_csv(fname, index=False, mode='a', header=False)
 
 
-def despine(ax=None, left=False, right=False, top=False, bottom=False,
-            xticks=True, yticks=True):
+def despine(ax=None, left=False, right=True, top=True, bottom=False,
+            xticks=True, yticks=True, all_sides=False):
     """
     Removes axis lines
     """
+    if all_sides:
+        left, right, top, bottom = [True] * 4
     if ax is None:
         ax = plt.gca()
     if not isinstance(ax, list):
@@ -169,7 +174,6 @@ def set_style(style='article', sns_style='white', w=1, h=1):
         }
     }
     rc = sdict[style]
-    sns.set_color_codes()
-    sns.set(rc=rc)
     plt.rcParams.update(rc)
-    sns.set_style(sns_style)
+    sns.set(rc=rc, style=sns_style,
+            color_codes=True)

@@ -170,7 +170,7 @@ class Simulator:
                 {"weight": {'distribution': 'lognormal_clipped',
                             'mu': mu(j),
                             'sigma': sigma(j),
-                            'low': 0., 'high': high},
+                            'low': low, 'high': high},
                 "delay": self.p['delay']})
         self.vprint('Connecting excitatory neurons J = ', self.p['J_ex'], 'C = ',
               self.p['C_ex'])
@@ -261,19 +261,43 @@ class Simulator:
 
     def simulate_trials(self, progress_bar=False):
         progress_bar = progress_bar and PBAR
+
+        def intensity(z):
+            rho = self.p['r'] * np.sqrt((self.p['n'] / self.p['NA'])**2 - 1)
+            return rho**2 / ((self.p['S'] * z + 1) * (z + rho)**2)
+
+        def affected_neurons(z):
+            theta = np.arcsin(self.p['NA'] / self.p['n'])
+            lcorr = self.p['r'] / np.tan(theta)
+            rad = (z + lcorr) * np.tan(theta)
+            A = np.pi * rad**2
+            dz = z[1] - z[0]
+            dV = A * dz
+            N = dV * self.p['density']
+            return np.array([np.sum(N[:i+1]) for i in range(len(N))])
+
+        z = np.arange(0,1.01,.01)
+        neurons = affected_neurons(z)
+        mask = neurons <= self.p['stim_N_ex'] + self.p['stim_N_in']
+        z_N = z[mask][-1]
         # Simulate one period without stimulation
         nest.Simulate(self.stim_times[0])
 
         # Set dc stimulation
         stims = []
         amps = [self.p['stim_amp_ex'], self.p['stim_amp_in']]
+        if 'stim_nodes_ex' not in self.p:
+            self.p['stim_nodes_ex'] = self.nodes_ex[:self.p['stim_N_ex']]
+        if 'stim_nodes_in' not in self.p:
+            self.p['stim_nodes_in'] = self.nodes_ex[:self.p['stim_N_in']]
+
         assert all(np.in1d(self.p['stim_nodes_ex'], self.nodes_ex))
         assert all(np.in1d(self.p['stim_nodes_in'], self.nodes_in))
         stim_nodes = [self.p['stim_nodes_ex'], self.p['stim_nodes_in']]
         self.stim_amps = {'ex': [], 'in': []}
         for a, nodes, pop in zip(amps, stim_nodes, ['ex', 'in']):
             for n in nodes:
-                amp = np.random.uniform(0, 1) * a
+                amp = intensity(np.random.uniform(0, z_N)) * a
                 self.stim_amps[pop].append({'node': n, 'amp': amp})
                 stim = nest.Create(
                     "dc_generator",
