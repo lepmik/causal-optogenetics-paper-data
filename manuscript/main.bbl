@@ -1,11 +1,49 @@
 \begin{thebibliography}{}
 
+\bibitem[Angrist and Pischke, 2008]{angrist2008mostly}
+Angrist, J.~D. and Pischke, J.-S. (2008).
+\newblock {\em Mostly harmless econometrics: An empiricist's companion}.
+\newblock Princeton university press.
+
 \bibitem[Aravanis et~al., 2007]{Aravanis2007}
 Aravanis, A.~M., Wang, L.~P., Zhang, F., Meltzer, L.~A., Mogri, M.~Z.,
   Schneider, M.~B., and Deisseroth, K. (2007).
 \newblock {An optical neural interface: in vivo control of rodent motor cortex
   with integrated fiberoptic and optogenetic technology.}
 \newblock {\em J. Neural Eng.}, 4(3):S143--S156.
+
+\bibitem[Boyden et~al., 2005]{boyden2005millisecond}
+Boyden, E.~S., Zhang, F., Bamberg, E., Nagel, G., and Deisseroth, K. (2005).
+\newblock Millisecond-timescale, genetically targeted optical control of neural
+  activity.
+\newblock {\em Nature neuroscience}, 8(9):1263.
+
+\bibitem[Cameron and Trivedi, 2005]{cameron2005microeconometrics}
+Cameron, A.~C. and Trivedi, P.~K. (2005).
+\newblock {\em Microeconometrics: methods and applications}.
+\newblock Cambridge university press.
+
+\bibitem[Card, 1993]{card1993using}
+Card, D. (1993).
+\newblock Using geographic variation in college proximity to estimate the
+  return to schooling.
+\newblock Technical report, National Bureau of Economic Research.
+
+\bibitem[Daniusis et~al., 2012]{daniusis2012inferring}
+Daniusis, P., Janzing, D., Mooij, J., Zscheischler, J., Steudel, B., Zhang, K.,
+  and Sch{\"o}lkopf, B. (2012).
+\newblock Inferring deterministic causal relations.
+\newblock {\em arXiv preprint arXiv:1203.3475}.
+
+\bibitem[Drton et~al., 2011]{drton2011global}
+Drton, M., Foygel, R., and Sullivant, S. (2011).
+\newblock Global identifiability of linear structural equation models.
+\newblock {\em The Annals of Statistics}, pages 865--886.
+
+\bibitem[Emiliani et~al., 2015]{emiliani2015all}
+Emiliani, V., Cohen, A.~E., Deisseroth, K., and H{\"a}usser, M. (2015).
+\newblock All-optical interrogation of neural circuits.
+\newblock {\em Journal of Neuroscience}, 35(41):13917--13926.
 
 \bibitem[English et~al., 2017]{English2017}
 English, D.~F., McKenzie, S., Evans, T., Kim, K., Yoon, E., and Buzs{\'{a}}ki,
@@ -18,16 +56,122 @@ English, D.~F., McKenzie, S., Evans, T., Kim, K., Yoon, E., and Buzs{\'{a}}ki,
 Ho, A. H.~P., Kim, D., and Somekh, M.~G. (2017).
 \newblock {\em {Handbook of photonics for biomedical engineering}}.
 
+\bibitem[Honey et~al., 2009]{honey2009predicting}
+Honey, C., Sporns, O., Cammoun, L., Gigandet, X., Thiran, J.-P., Meuli, R., and
+  Hagmann, P. (2009).
+\newblock Predicting human resting-state functional connectivity from
+  structural connectivity.
+\newblock {\em Proceedings of the National Academy of Sciences},
+  106(6):2035--2040.
+
+\bibitem[Jonas and Kording, 2017]{Jonas2017}
+Jonas, E. and Kording, K.~P. (2017).
+\newblock {Could a Neuroscientist Understand a Microprocessor?}
+\newblock {\em PLoS Comput. Biol.}, 13(1):1--24.
+
+\bibitem[Kumar et~al., 2008]{Kumar2008}
+Kumar, A., Schrader, S., Aertsen, A., and Rotter, S. (2008).
+\newblock {The high-conductance state of cortical networks.}
+\newblock {\em Neural Comput.}, 20(1):1--43.
+
+\bibitem[Lerman et~al., 2017]{lerman2017two}
+Lerman, G.~M., Gill, J.~V., Rinberg, D., and Shoham, S. (2017).
+\newblock Two photon holographic stimulation system for cellular-resolution
+  interrogation of olfactory coding.
+\newblock In {\em Optics and the Brain}, pages BrM3B--5. Optical Society of
+  America.
+
+\bibitem[Mason et~al., 1991]{Mason1991}
+Mason, a., Nicoll, A., and Stratford, K. (1991).
+\newblock {Synaptic transmission between individual pyramidal neurons of the
+  rat visual cortex in vitro.}
+\newblock {\em J. Neurosci.}, 11(January):72--84.
+
+\bibitem[Nikolenko et~al., 2007]{nikolenko2007two}
+Nikolenko, V., Poskanzer, K.~E., and Yuste, R. (2007).
+\newblock Two-photon photostimulation and imaging of neural circuits.
+\newblock {\em Nature methods}, 4(11):943.
+
+\bibitem[Par{\'e} et~al., 1998]{pare1998impact}
+Par{\'e}, D., Shink, E., Gaudreau, H., Destexhe, A., and Lang, E.~J. (1998).
+\newblock Impact of spontaneous synaptic activity on the resting properties of
+  cat neocortical pyramidal neurons in vivo.
+\newblock {\em Journal of neurophysiology}, 79(3):1450--1460.
+
+\bibitem[Pearl, 2009]{pearl2009causality}
+Pearl, J. (2009).
+\newblock {\em Causality}.
+\newblock Cambridge university press.
+
+\bibitem[Pedregosa et~al., 2011]{scikit-learn}
+Pedregosa, F., Varoquaux, G., Gramfort, A., Michel, V., Thirion, B., Grisel,
+  O., Blondel, M., Prettenhofer, P., Weiss, R., Dubourg, V., Vanderplas, J.,
+  Passos, A., Cournapeau, D., Brucher, M., Perrot, M., and Duchesnay, E.
+  (2011).
+\newblock Scikit-learn: Machine learning in {P}ython.
+\newblock {\em Journal of Machine Learning Research}, 12:2825--2830.
+
+\bibitem[Peters et~al., 2017]{peters2017elements}
+Peters, J., Janzing, D., and Sch{\"o}lkopf, B. (2017).
+\newblock {\em Elements of causal inference: foundations and learning
+  algorithms}.
+\newblock MIT Press.
+
+\bibitem[Pillow et~al., 2008]{pillow2008spatio}
+Pillow, J.~W., Shlens, J., Paninski, L., Sher, A., Litke, A.~M., Chichilnisky,
+  E., and Simoncelli, E.~P. (2008).
+\newblock Spatio-temporal correlations and visual signalling in a complete
+  neuronal population.
+\newblock {\em Nature}, 454(7207):995.
+
+\bibitem[Rudolph and Destexhe, 2006]{rudolph2006use}
+Rudolph, M. and Destexhe, A. (2006).
+\newblock On the use of analytical expressions for the voltage distribution to
+  analyze intracellular recordings.
+\newblock {\em Neural computation}, 18(12):2917--2922.
+
 \bibitem[Sayer et~al., 1990]{Sayer1990}
 Sayer, R.~J., Friedlander, M.~J., and Redman, S.~J. (1990).
 \newblock {The time course and amplitude of EPSPs evoked at synapses between
   pairs of CA3/CA1 neurons in the hippocampal slice.}
 \newblock {\em J. Neurosci.}, 10(3):826--836.
 
+\bibitem[Shimizu et~al., 2006]{shimizu2006linear}
+Shimizu, S., Hoyer, P.~O., Hyv{\"a}rinen, A., and Kerminen, A. (2006).
+\newblock A linear non-gaussian acyclic model for causal discovery.
+\newblock {\em Journal of Machine Learning Research}, 7(Oct):2003--2030.
+
 \bibitem[Stark and Abeles, 2009]{Stark2009}
 Stark, E. and Abeles, M. (2009).
 \newblock {Unbiased estimation of precise temporal correlations between spike
   trains}.
 \newblock {\em J. Neurosci. Methods}, 179:90--100.
+
+\bibitem[Stevenson et~al., 2008a]{stevenson2008inferring}
+Stevenson, I.~H., Rebesco, J.~M., Miller, L.~E., and K{\"o}rding, K.~P.
+  (2008a).
+\newblock Inferring functional connections between neurons.
+\newblock {\em Current opinion in neurobiology}, 18(6):582--588.
+
+\bibitem[Stevenson et~al., 2008b]{Stevenson2008}
+Stevenson, I.~H., Rebesco, J.~M., Miller, L.~E., and K{\"{o}}rding, K.~P.
+  (2008b).
+\newblock {Inferring functional connections between neurons}.
+\newblock {\em Curr. Opin. Neurobiol.}, 18(6):582--588.
+
+\bibitem[Wald, 1940]{wald1940fitting}
+Wald, A. (1940).
+\newblock The fitting of straight lines if both variables are subject to error.
+\newblock {\em The Annals of Mathematical Statistics}, 11(3):284--300.
+
+\bibitem[Wassermann, 2006]{wassermann2006all}
+Wassermann, L. (2006).
+\newblock All of nonparametric statistics.
+\newblock {\em New York}.
+
+\bibitem[Zemelman et~al., 2002]{zemelman2002selective}
+Zemelman, B.~V., Lee, G.~A., Ng, M., and Miesenb{\"o}ck, G. (2002).
+\newblock Selective photostimulation of genetically charged neurons.
+\newblock {\em Neuron}, 33(1):15--22.
 
 \end{thebibliography}

@@ -9,10 +9,14 @@ from exana.statistics.tools import ccg_significance
 from tqdm import tqdm
 
 data_path = 'results'
-# N_trials = 30000
-trials = [5000, 10000, 15000, 20000, 25000, 30000]
+trials = [30000]
+# trials = [5000, 10000, 15000, 20000, 25000, 30000]
 N = 100
-winsize = 4
+winsize_iv = 4
+# latency_iv = 4
+
+winsize_cch = 3
+latency_cch = 3
 binsize_corr = 5.
 min_stim = 1.
 
@@ -23,7 +27,8 @@ jobname = param_module.replace('.py', '')
 
 dataa = np.load(op.join(data_path, jobname + '.npz'))['data'][()]
 
-latency = dataa['params']['delay'] + dataa['params']['tau_syn_ex']
+latency_iv = dataa['params']['delay'] + dataa['params']['tau_syn_ex']
+
 
 conn = dataa['connections']
 spiketrains = {s['sender']: {'pop': pop, 'times': s['times']}
@@ -33,7 +38,7 @@ rec = spiketrains.keys()
 sources = [s for s in dataa['stim_nodes']['ex'] if s in rec][:int(N/2)]
 targets = [n for n in dataa['nodes']['ex'] if n not in sources and n in rec][:int(N/2)]
 assert len(sources) + len(targets) == N
-pbar = tqdm(total=int(N/2)**2 * len(trials))
+pbar = tqdm(total=int(N / 2)**2 * len(trials))
 for N_trials in trials:
     for source in sources:
         for target in targets: #NOTE different latency in inhibitory neurons
@@ -48,7 +53,7 @@ for N_trials in trials:
             spike_trains = [source_t[source_t <= t_stop],
                             target_t[target_t <= t_stop]]
             iv = IV(*spike_trains, stim_times,
-                     winsize=winsize, latency=latency)
+                     winsize=winsize_iv, latency=latency_iv)
             stim_amp = dataa['stim_amps'][spiketrains[source]['pop']]
             try:
                 lr = iv.logreg
@@ -78,7 +83,7 @@ for N_trials in trials:
                     *spike_trains, limit=15, binsize=1,
                     hollow_fraction=.6, width=10)
                 assert len(pcausal) == len(cch)
-                mask = (bins >= latency) & (bins <= latency + winsize)
+                mask = (bins >= latency_cch) & (bins <= latency_cch + winsize_cch)
                 cmax = np.max(cch[mask])
                 idx, = np.where(cch==cmax)
                 if len(idx) > 1:

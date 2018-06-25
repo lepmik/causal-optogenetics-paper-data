@@ -42,12 +42,12 @@
      id="namedview363"
      showgrid="false"
      inkscape:zoom="1.8224244"
-     inkscape:cx="204.49426"
+     inkscape:cx="109.56577"
      inkscape:cy="77.542313"
      inkscape:window-x="53"
      inkscape:window-y="24"
      inkscape:window-maximized="1"
-     inkscape:current-layer="figure_1" />
+     inkscape:current-layer="layer1" />
   <defs
      id="defs4">
     <style
@@ -1631,7 +1631,7 @@
          y="548.48279"
          x="243.01773"
          id="tspan11955"
-         sodipodi:role="line">d</tspan></text>
+         sodipodi:role="line">r</tspan></text>
     <text
        sodipodi:linespacing="125%"
        id="text11892-3"
@@ -1655,7 +1655,7 @@
          y="548.28381"
          x="291.74872"
          id="tspan11955-6"
-         sodipodi:role="line">d</tspan></text>
+         sodipodi:role="line">r</tspan></text>
     <path
        sodipodi:nodetypes="cc"
        inkscape:connector-curvature="0"

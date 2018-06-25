@@ -5,7 +5,7 @@ from sklearn.linear_model import LogisticRegression
 import seaborn as sns
 
 def hist_stim(stim_times, source, target, period, winsize, latency):
-    hist = np.zeros([len(stim_times), 4])
+    hist = np.zeros([len(stim_times), 3])
     src = np.searchsorted
     for idx, t in enumerate(stim_times):
         hist[idx,:] = (
@@ -16,11 +16,9 @@ def hist_stim(stim_times, source, target, period, winsize, latency):
           src(target, t + latency, 'left') <
           src(target, t + latency + winsize, 'right'),
           # no stim response
-          src(source, t + period - winsize - latency, 'left') <
-          src(source, t + period - latency, 'right'),
-          # no stim synaptic response
-          src(target, t + period - winsize, 'left') <
-          src(target, t + period, 'right'))
+          src(source, t - 2*winsize, 'left') <
+          src(source, t - winsize, 'right')
+          )
     return hist
 
 class IV:
@@ -58,8 +56,8 @@ class IV:
 
     @property
     def wald_ns(self):
-        ys = self.lams[self.NoStim, 3]
-        ysr = self.lams[self.NoStimRef, 3]
+        ys = self.lams[self.NoStim, 1]
+        ysr = self.lams[self.NoStimRef, 1]
         return(ys.mean() - ysr.mean())
 
     @property
@@ -71,7 +69,7 @@ class IV:
 
     @property
     def logreg_ns(self):
-        X, Y = self.lams[:, 2], self.lams[:, 3]
+        X, Y = self.lams[:-1, 2], self.lams[1:, 1]
         lr = LogisticRegression()
         lr.fit(X.reshape(-1, 1).astype(int), Y.astype(int))
         return lr

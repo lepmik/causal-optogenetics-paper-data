@@ -33,7 +33,7 @@ parameters = {
     'J_low'          : 0.05,
     'p_var'          : .5, # percentage variation of mean in lognormal dist
     # Stimulation parameters
-    'stim_N_ex'       : 950,
+    'stim_N_ex'       : 800,
     'stim_N_in'       : 0,
     'stim_dist'       : 'poisson',
     'stim_amp_ex'     : 10.0, # pA

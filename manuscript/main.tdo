@@ -1,16 +1,15 @@
-\contentsline {todo}{cite}{2}
-\contentsline {todo}{cite card 1995, found in cameron}{2}
-\contentsline {todo}{cite TSOLS}{3}
-\contentsline {todo}{data showing synchrounous regular does not work (can be put together with regular stim. pattern)}{3}
-\contentsline {todo}{I think I would choose a couple of examples that emulate what an experimentalist would do (a) periodic slow (bad power not enough data) (b) periodic fast (good power but confounded) (c) random fast (good everything) But I would then also redo all of them with a "weak network" model where therefore the assumptions are pretty well matched an also a "strong network" model where neurons have massive influence on one another (maybe oscillate or something) and hence the weakness assumption that is behind the IV justification breaks down }{3}
-\contentsline {todo}{cite the book or whatever}{9}
-\contentsline {todo}{this will not work if you stimulate non random since then you may correlate u with sr, u is still driving x but asynchronously so sr is still uncorrelated with u.}{10}
-\contentsline {todo}{cite wald}{10}
-\contentsline {todo}{Note that if we assume that the stimulation is so strong that the network effect $ u_{ns} $ has a negligible effect on $ x_{s} $ and that due to synaptic and axonal delay the effect of $ u_{s} $ is unable to affect $ x_{s} $ in it's respective stimulus response time. Then a conventional method like logistic regression will work.}{10}
-\contentsline {todo}{refer to parameter table}{11}
-\contentsline {todo}{make sure delay is correctly inserted}{12}
-\contentsline {todo}{Figure: Figure showing synaptic distribution }{12}
-\contentsline {todo}{Figure: parameter sweep }{12}
-\contentsline {todo}{Figure: CC distribution }{12}
-\contentsline {todo}{Figure: CV distribution }{13}
-\contentsline {todo}{small perturbations on noisy networks will not yield a correlation between AC because the variance in stimulus response time in A will not be explained by the variance in spike times of C. Small variations of onset times in A relative to C will over many trials will wash out correlations between AC and at the same time strengthen correlations between BC. The only way to get a strong correlation between AC is to impose a short and strong stimulus effectively making AB spike coincidentally.}{13}
+\contentsline {todo}{find better ref for things being roughly flat}{5}
+\contentsline {todo}{fig 3: remove wald from y-axis, add naive measurement with rightsided y-axis, add ground truth as probability for inducing a spike.}{9}
+\contentsline {todo}{compare with cramer-rao bound}{9}
+\contentsline {todo}{make sure $ g $ is descrbed in methods}{9}
+\contentsline {todo}{cite or write method}{12}
+\contentsline {todo}{I think Michael Hausser presented 2p stimulation of single cells in vivo at FENS/SfN last year}{14}
+\contentsline {todo}{If neurons were situated in small clusters.}{14}
+\contentsline {todo}{how would this be in the brain with more variable synaptic properties?}{15}
+\contentsline {todo}{cite the book or whatever}{17}
+\contentsline {todo}{cite wald}{18}
+\contentsline {todo}{To utilize the refractory period as an IV To do this we first picket out one window of $ 4 $ ms for each of the upstream and downstream neuron with a latency of $ 0 $ and $ \tau _{syn} + D $ ms (see \cref {eq:syn} ) respectively. By binary classifying each window for each trial weather it contained a spike we obtained two binary arrays}{18}
+\contentsline {todo}{ However the estimate of the refractory period $ s_r $ may be biased, as the network state may differ between times when a neuron is refractory and times when it is not. This issue we can also correct for by calculating $ \beta $ for baseline bins with no stimulation and no stimulation during absolute refractory period. This will linearly correct for the differences in network state that are due to refractory periods while maintaining the causal validity of \cref {eq:wald}. }{18}
+\contentsline {todo}{Note that if we assume that the stimulation is so strong that the network effect $ u_{ns} $ has a negligible effect on $ x_{s} $ and that due to synaptic and axonal delay the effect of $ u_{s} $ is unable to affect $ x_{s} $ in it's respective stimulus response time. Then a conventional method like logistic regression will work.}{18}
+\contentsline {todo}{refer to parameter table}{20}
+\contentsline {todo}{write down CV method}{20}

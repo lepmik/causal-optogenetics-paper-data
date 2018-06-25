@@ -22,6 +22,7 @@ except ImportError:
 
 nest.set_verbosity(100)
 
+
 def hasattrs(o, *args):
     if any(hasattr(o, a) for a in args):
         return True
@@ -244,9 +245,11 @@ class Simulator:
         nest.Connect(self.nodes_ex[:N_rec_ex], self.spikes_ex)
         nest.Connect(self.nodes_in[:N_rec_in], self.spikes_in)
 
-    def set_state_rec(self, sampling_period=None):
-        sampling_period = sampling_period or self.p['res']
+    def set_state_rec(self):
+        sampling_period = self.p.get('sampling_period') or self.p['res']
         def connect(nodes, label, N_rec):
+            if not N_rec:
+                return
             vm = nest.Create("multimeter",
                 params = {"interval": sampling_period,
                           "record_from": ['V_m'],
@@ -254,13 +257,14 @@ class Simulator:
                           "label": label, "withtime": True})
             nest.Connect(vm, nodes[:N_rec])
             return vm
-        N_rec_ex = self.p.get('N_rec_state_ex') or self.p['N_ex']
-        N_rec_in = self.p.get('N_rec_state_in') or self.p['N_in']
-        self.vm_ex = connect(self.nodes_ex, "exc_v", N_rec_ex)
-        self.vm_in = connect(self.nodes_in, "inh_v", N_rec_in)
+        self.vm_ex = connect(self.nodes_ex, "exc_v",
+                             self.p.get('N_rec_state_ex'))
+        self.vm_in = connect(self.nodes_in, "inh_v",
+                             self.p.get('N_rec_state_in'))
 
     def simulate_trials(self, progress_bar=False):
         progress_bar = progress_bar and PBAR
+        amps = [self.p['stim_amp_ex'], self.p['stim_amp_in']]
 
         def intensity(z):
             rho = self.p['r'] * np.sqrt((self.p['n'] / self.p['NA'])**2 - 1)
@@ -275,17 +279,17 @@ class Simulator:
             dV = A * dz
             N = dV * self.p['density']
             return np.array([np.sum(N[:i+1]) for i in range(len(N))])
-
-        z = np.arange(0,1.01,.01)
-        neurons = affected_neurons(z)
-        mask = neurons <= self.p['stim_N_ex'] + self.p['stim_N_in']
-        z_N = z[mask][-1]
+        if any(a > 0 for a in amps):
+            z = np.arange(0,1.01,.01)
+            neurons = affected_neurons(z)
+            mask = neurons <= self.p['stim_N_ex'] + self.p['stim_N_in']
+            z_N = z[mask][-1]
         # Simulate one period without stimulation
         nest.Simulate(self.stim_times[0])
 
         # Set dc stimulation
         stims = []
-        amps = [self.p['stim_amp_ex'], self.p['stim_amp_in']]
+
         if 'stim_nodes_ex' not in self.p:
             self.p['stim_nodes_ex'] = self.nodes_ex[:self.p['stim_N_ex']]
         if 'stim_nodes_in' not in self.p:
@@ -297,7 +301,7 @@ class Simulator:
         self.stim_amps = {'ex': [], 'in': []}
         for a, nodes, pop in zip(amps, stim_nodes, ['ex', 'in']):
             for n in nodes:
-                amp = intensity(np.random.uniform(0, z_N)) * a
+                amp = a if a == 0 else intensity(np.random.uniform(0, z_N)) * a
                 self.stim_amps[pop].append({'node': n, 'amp': amp})
                 stim = nest.Create(
                     "dc_generator",
@@ -425,7 +429,7 @@ class Simulator:
     def save_data(self, overwrite=False):
         fnameout = os.path.join(self.p['data_path'], self.p['fname'] + '.npz')
         if self.mpi:
-            fnameout.replace('.npz', '_{}.npz'.format(self.comm.Get_rank()))
+            fnameout = fnameout.replace('.npz', '_{}.npz'.format(self.comm.Get_rank()))
         if not os.path.exists(self.p['data_path']):
             os.mkdir(self.p['data_path'])
         if not overwrite and os.path.exists(fnameout):
@@ -461,3 +465,22 @@ class Simulator:
         with open(fnameout, 'w') as outfile:
             json.dump(parameters_no_units, outfile,
                       sort_keys=True, indent=4)
+
+
+if __name__ == '__main__':
+    import sys
+    import imp
+    import os.path as op
+
+    if len(sys.argv) != 2:
+        raise IOError('Usage: "python simulator.py parameters"')
+
+    param_module = sys.argv[1]
+    jobname = param_module.replace('.py', '')
+    currdir = op.dirname(op.abspath(__file__))
+    f, p, d = imp.find_module(jobname, [currdir])
+    parameters = imp.load_module(jobname, f, p, d).parameters
+
+    sim = Simulator(parameters, mpi=False, data_path='results',
+                    fname=jobname)
+    sim.simulate(save=True, progress_bar=True)
