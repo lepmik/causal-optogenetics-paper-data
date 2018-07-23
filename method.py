@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
 from sklearn.linear_model import LogisticRegression
+from cross_correlation import correlogram, poisson_continuity_correction
 import seaborn as sns
 
 def hist_stim(stim_times, source, target, period, winsize, latency):
@@ -73,6 +74,42 @@ class IV:
         lr = LogisticRegression()
         lr.fit(X.reshape(-1, 1).astype(int), Y.astype(int))
         return lr
+
+    @property
+    def cch(self):
+        return self.__cch__('Stim', 'StimRef')
+
+    @property
+    def cch_ns(self):
+        return self.__cch__('NoStim', 'NoStimRef')
+
+    def __cch__(self, hit_ref, miss_ref):
+        '''
+        hit_ref: e.g. "Stim"
+        miss_ref: e.g. "StimRef"
+        '''
+        if hasattr(self, hit_ref + miss_ref):
+            return getattr(self, hit_ref + miss_ref)
+        binsize = 1.
+        limit = np.ceil(self.latency + self.winsize)
+        stim_hit = self.stim_times[getattr(self, hit_ref)]
+        stim_miss = self.stim_times[getattr(self, miss_ref)]
+        cch_hit, bins = correlogram(
+            stim_hit, self.target,
+            binsize=binsize, limit=limit, density=False)
+        cch_miss, bins_ = correlogram(
+            stim_miss, self.target,
+            binsize=binsize, limit=limit, density=False)
+        assert np.array_equal(bins, bins_)
+        mask = (bins >= self.latency) & (bins <= self.latency + self.winsize)
+        idx, = np.where(cch_hit==np.max(cch_hit[mask]) * mask)
+        idx = idx if len(idx) == 1 else idx[0]
+        ptime = float(bins[idx])
+        pcausal = poisson_continuity_correction(cch_hit[idx], cch_miss[idx])
+        trans_prob = sum(cch_hit[mask] / len(stim_hit) -
+                         cch_miss[mask] / len(stim_miss))
+        setattr(self, hit_ref + miss_ref, (trans_prob, pcausal, ptime))
+        return trans_prob, pcausal, ptime
 
     def trials(self, node):
         assert node in ['source', 'target']

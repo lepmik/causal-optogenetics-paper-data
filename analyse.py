@@ -5,8 +5,8 @@ import numpy as np
 import os.path as op
 from tools import csv_append_dict, corrcoef, coef_var
 import quantities as pq
-from exana.statistics.tools import ccg_significance
 from tqdm import tqdm
+from cross_correlation import transfer_probability
 
 data_path = 'results'
 trials = [30000]
@@ -21,7 +21,7 @@ binsize_corr = 5.
 min_stim = 1.
 
 if len(sys.argv) != 2:
-    raise IOError('Usage: "python run.py parameters"')
+    raise IOError('Usage: "python analyse.py parameters"')
 param_module = sys.argv[1]
 jobname = param_module.replace('.py', '')
 
@@ -54,7 +54,6 @@ for N_trials in trials:
                             target_t[target_t <= t_stop]]
             iv = IV(*spike_trains, stim_times,
                      winsize=winsize_iv, latency=latency_iv)
-            stim_amp = dataa['stim_amps'][spiketrains[source]['pop']]
             try:
                 lr = iv.logreg
                 logreg = float(lr.coef_)
@@ -69,6 +68,7 @@ for N_trials in trials:
             except ValueError:
                 logreg_ns = np.nan
                 logreg_ns_intercept = np.nan
+            stim_amp = dataa['stim_amps'][spiketrains[source]['pop']]
             # cc, cv and stuff
             w = conn[(conn.source==source) & (conn.target==target)].weight
             n_syn = len(w)
@@ -78,37 +78,27 @@ for N_trials in trials:
                           binsize=binsize_corr)[0, 1]
             source_cv, target_cv = coef_var(spike_trains)
             # trans_prob
-            try:
-                pcausal, pfast, bins, cch, cch_s = ccg_significance(
-                    *spike_trains, limit=15, binsize=1,
-                    hollow_fraction=.6, width=10)
-                assert len(pcausal) == len(cch)
-                mask = (bins >= latency_cch) & (bins <= latency_cch + winsize_cch)
-                cmax = np.max(cch[mask])
-                idx, = np.where(cch==cmax)
-                if len(idx) > 1:
-                    bin_idx, = np.where(mask)
-                    idxmask = [i in bin_idx for i in idx]
-                    assert sum(idxmask) > 0
-                    idx = idx[idxmask]
-                    if len(idx) > 1:
-                        idx = idx[0]
-                pfast = float(pfast[idx])
-                pcausal = float(pcausal[idx])
-                ptime = float(bins[idx])
-                trans_prob = sum(cch[mask] - cch_s[mask]) / len(spike_trains[0])
-            except:
-                cmax, pfast, pcausal, ptime, trans_prob = [np.nan] * 5
+            trans_prob, ppeak, pfast, ptime, cmax = transfer_probability(
+                *spike_trains, binsize=1, limit=15, hollow_fraction=.6,
+                width=10, latency=latency_cch, winsize=winsize_cch)
+            cch_iv, cch_iv_pcausal, cch_iv_ptime  = iv.cch
+            cch_iv_ns, cch_iv_pcausal_ns, cch_iv_ptime_ns  = iv.cch_ns
             r = {
                 'rate_1': len(spike_trains[0]) / t_stop,
                 'rate_2': len(spike_trains[1]) / t_stop,
-                'pcausal': pcausal,
-                'pfast': pfast,
-                'ptime': ptime,
+                'ppeak': float(ppeak),
+                'pfast': float(pfast),
+                'ptime': float(ptime),
                 'cmax': cmax,
                 'trans_prob': trans_prob,
                 'wald': iv.wald,
                 'wald_ns': iv.wald_ns,
+                'cch_iv': cch_iv,
+                'cch_iv_pcausal': float(cch_iv_pcausal),
+                'cch_iv_ptime': float(cch_iv_ptime),
+                'cch_iv_ns': cch_iv_ns,
+                'cch_iv_pcausal_ns': float(cch_iv_pcausal_ns),
+                'cch_iv_ptime_ns': float(cch_iv_ptime_ns),
                 'logreg': logreg,
                 'logreg_ns': logreg_ns,
                 'logreg_intercept': logreg_intercept,
