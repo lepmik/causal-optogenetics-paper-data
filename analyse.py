@@ -9,9 +9,9 @@ from tqdm import tqdm
 from cross_correlation import transfer_probability
 
 data_path = 'results'
-trials = [30000]
-# trials = [5000, 10000, 15000, 20000, 25000, 30000]
-N = 100
+# trials = [30000]
+trials = [5000, 10000, 15000, 20000, 25000, 30000]
+N = 200
 winsize_iv = 4
 # latency_iv = 4
 
@@ -36,7 +36,8 @@ spiketrains = {s['sender']: {'pop': pop, 'times': s['times']}
                for s in dataa['spiketrains'][pop]}
 rec = spiketrains.keys()
 sources = [s for s in dataa['stim_nodes']['ex'] if s in rec][:int(N/2)]
-targets = [n for n in dataa['nodes']['ex'] if n not in sources and n in rec][:int(N/2)]
+targets = [n for n in dataa['nodes']['ex']
+           if n not in dataa['stim_nodes']['ex'] and n in rec][:int(N/2)]
 assert len(sources) + len(targets) == N
 pbar = tqdm(total=int(N / 2)**2 * len(trials))
 for N_trials in trials:
@@ -61,13 +62,6 @@ for N_trials in trials:
             except ValueError:
                 logreg = np.nan
                 logreg_intercept = np.nan
-            try:
-                lr = iv.logreg_ns
-                logreg_ns = float(lr.coef_)
-                logreg_ns_intercept = float(lr.intercept_)
-            except ValueError:
-                logreg_ns = np.nan
-                logreg_ns_intercept = np.nan
             stim_amp = dataa['stim_amps'][spiketrains[source]['pop']]
             # cc, cv and stuff
             w = conn[(conn.source==source) & (conn.target==target)].weight
@@ -81,28 +75,22 @@ for N_trials in trials:
             trans_prob, ppeak, pfast, ptime, cmax = transfer_probability(
                 *spike_trains, binsize=1, limit=15, hollow_fraction=.6,
                 width=10, latency=latency_cch, winsize=winsize_cch)
-            cch_iv, cch_iv_pcausal, cch_iv_ptime  = iv.cch
-            cch_iv_ns, cch_iv_pcausal_ns, cch_iv_ptime_ns  = iv.cch_ns
             r = {
                 'rate_1': len(spike_trains[0]) / t_stop,
                 'rate_2': len(spike_trains[1]) / t_stop,
-                'ppeak': float(ppeak),
-                'pfast': float(pfast),
-                'ptime': float(ptime),
+                'ppeak': ppeak,
+                'pfast': pfast,
+                'ptime': ptime,
                 'cmax': cmax,
-                'trans_prob': trans_prob,
-                'wald': iv.wald,
-                'wald_ns': iv.wald_ns,
-                'cch_iv': cch_iv,
-                'cch_iv_pcausal': float(cch_iv_pcausal),
-                'cch_iv_ptime': float(cch_iv_ptime),
-                'cch_iv_ns': cch_iv_ns,
-                'cch_iv_pcausal_ns': float(cch_iv_pcausal_ns),
-                'cch_iv_ptime_ns': float(cch_iv_ptime_ns),
+                'cch': trans_prob,
+                'iv_wald': iv.wald,
+                'iv_cch': iv.trans_prob,
+                'iv_pcausal': iv.prob['pcausal'],
+                'iv_pfast': iv.prob['pfast'],
+                'iv_ppeak': iv.prob['ppeak'],
+                'iv_ptime': iv.prob['ptime'],
                 'logreg': logreg,
-                'logreg_ns': logreg_ns,
                 'logreg_intercept': logreg_intercept,
-                'logreg_ns_intercept': logreg_ns_intercept,
                 'weight': weight,
                 'n_syn': n_syn,
                 'stim_amp': float(stim_amp[stim_amp.node==source].amp),

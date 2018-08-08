@@ -2,11 +2,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
 from sklearn.linear_model import LogisticRegression
-from cross_correlation import correlogram, poisson_continuity_correction
+from cross_correlation import (correlogram, poisson_continuity_correction,
+                               cch_convolve)
 import seaborn as sns
 
 def hist_stim(stim_times, source, target, period, winsize, latency):
-    hist = np.zeros([len(stim_times), 3])
+    hist = np.zeros([len(stim_times), 2])
     src = np.searchsorted
     for idx, t in enumerate(stim_times):
         hist[idx,:] = (
@@ -15,16 +16,13 @@ def hist_stim(stim_times, source, target, period, winsize, latency):
           src(source, t + winsize, 'right'),
           # stim synaptic response
           src(target, t + latency, 'left') <
-          src(target, t + latency + winsize, 'right'),
-          # no stim response
-          src(source, t - 2*winsize, 'left') <
-          src(source, t - winsize, 'right')
+          src(target, t + latency + winsize, 'right')
           )
     return hist
 
 class IV:
     def __init__(self, source, target, stim_times,
-                 winsize, latency):
+                 winsize, latency, **parameters):
         '''
         Parameters
         ----------
@@ -35,6 +33,14 @@ class IV:
         stim_times : array
             stimulation times
         '''
+        p = {
+            'width': 10,
+            'hollow_fraction': .6,
+            'kerntype': 'gaussian'
+        }
+        if parameters:
+            p.update(parameters)
+        self.p = p
         self.period = np.min(np.diff(stim_times))
         self.stim_times = stim_times
         self.source = source
@@ -46,19 +52,11 @@ class IV:
                       self.period, self.winsize, self.latency))
         self.StimRef = self.lams[:, 0] == 0
         self.Stim = self.StimRef == False
-        self.NoStimRef = self.lams[:, 2] == 0
-        self.NoStim = self.NoStimRef == False
 
     @property
     def wald(self):
         ys = self.lams[self.Stim, 1]
         ysr = self.lams[self.StimRef, 1]
-        return(ys.mean() - ysr.mean())
-
-    @property
-    def wald_ns(self):
-        ys = self.lams[self.NoStim, 1]
-        ysr = self.lams[self.NoStimRef, 1]
         return(ys.mean() - ysr.mean())
 
     @property
@@ -69,47 +67,66 @@ class IV:
         return lr
 
     @property
-    def logreg_ns(self):
-        X, Y = self.lams[:-1, 2], self.lams[1:, 1]
-        lr = LogisticRegression()
-        lr.fit(X.reshape(-1, 1).astype(int), Y.astype(int))
-        return lr
+    def trans_prob(self):
+        mask = ((self.cch['bins'] >= self.latency) &
+                (self.cch['bins'] <= self.latency + self.winsize))
+        trans_prob = sum(self.cch['cch_hit'][mask] / sum(self.Stim) -
+                         self.cch['cch_miss'][mask] / sum(self.StimRef))
+        return trans_prob
 
     @property
     def cch(self):
-        return self.__cch__('Stim', 'StimRef')
-
-    @property
-    def cch_ns(self):
-        return self.__cch__('NoStim', 'NoStimRef')
-
-    def __cch__(self, hit_ref, miss_ref):
-        '''
-        hit_ref: e.g. "Stim"
-        miss_ref: e.g. "StimRef"
-        '''
-        if hasattr(self, hit_ref + miss_ref):
-            return getattr(self, hit_ref + miss_ref)
+        if hasattr(self, '_cch'):
+            return getattr(self, '_cch')
         binsize = 1.
-        limit = np.ceil(self.latency + self.winsize)
-        stim_hit = self.stim_times[getattr(self, hit_ref)]
-        stim_miss = self.stim_times[getattr(self, miss_ref)]
+        limit = np.ceil(self.latency + self.winsize) * 2
+        stim_hit = self.stim_times[self.Stim]
+        stim_miss = self.stim_times[self.StimRef]
         cch_hit, bins = correlogram(
             stim_hit, self.target,
             binsize=binsize, limit=limit, density=False)
         cch_miss, bins_ = correlogram(
             stim_miss, self.target,
             binsize=binsize, limit=limit, density=False)
+        cch_full = cch_hit + cch_miss
         assert np.array_equal(bins, bins_)
-        mask = (bins >= self.latency) & (bins <= self.latency + self.winsize)
-        idx, = np.where(cch_hit==np.max(cch_hit[mask]) * mask)
+        result = {'cch_hit': cch_hit,
+                  'cch_miss': cch_miss,
+                  'cch_full': cch_full,
+                  'bins': bins}
+        setattr(self, '_cch', result)
+        return result
+
+    @property
+    def prob(self):
+        if hasattr(self, '_p'):
+            return getattr(self, '_p')
+        cch_s = cch_convolve(
+            cch=self.cch['cch_full'], width=self.p['width'],
+            hollow_fraction=self.p['hollow_fraction'],
+            kerntype=self.p['kerntype'])
+        mask = ((self.cch['bins'] >= self.latency) &
+                (self.cch['bins'] <= self.latency + self.winsize))
+        hit_max = np.max(self.cch['cch_hit'][mask])
+        idx, = np.where(self.cch['cch_hit']==hit_max * mask)
         idx = idx if len(idx) == 1 else idx[0]
-        ptime = float(bins[idx])
-        pcausal = poisson_continuity_correction(cch_hit[idx], cch_miss[idx])
-        trans_prob = sum(cch_hit[mask] / len(stim_hit) -
-                         cch_miss[mask] / len(stim_miss))
-        setattr(self, hit_ref + miss_ref, (trans_prob, pcausal, ptime))
-        return trans_prob, pcausal, ptime
+        pfast, = poisson_continuity_correction(hit_max, cch_s[idx])
+        cch_half_len = int(np.floor(len(self.cch['cch_full']) / 2.))
+        ppeak, = poisson_continuity_correction(
+            np.max(self.cch['cch_full'][:cch_half_len]), hit_max)
+        ptime = float(self.cch['bins'][idx])
+        pcausal, = poisson_continuity_correction(
+            self.cch['cch_hit'][idx], self.cch['cch_miss'][idx])
+        result = {'pcausal': pcausal,
+                  'pfast': pfast,
+                  'ppeak': ppeak,
+                  'ptime': ptime}
+        setattr(self, '_p', result)
+        return result
+
+    @property
+    def hit_rate(self):
+        return sum(self.Stim) / len(self.Stim)
 
     def trials(self, node):
         assert node in ['source', 'target']

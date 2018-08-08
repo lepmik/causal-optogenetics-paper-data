@@ -132,10 +132,10 @@ def transfer_probability(t1, t2, binsize, limit, hollow_fraction, width,
     cmax = np.max(cch[mask])
     idx, = np.where(cch==cmax * mask)
     idx = idx if len(idx) == 1 else idx[0]
-    pfast = poisson_continuity_correction(cmax, cch_s[idx])
+    pfast, = poisson_continuity_correction(cmax, cch_s[idx])
     cch_half_len = int(np.floor(len(cch) / 2.))
     max_pre = np.max(cch[:cch_half_len])
-    ppeak = poisson_continuity_correction(cmax, max_pre)
+    ppeak, = poisson_continuity_correction(cmax, max_pre)
     ptime = float(bins[idx])
     trans_prob = sum(cch[mask] - cch_s[mask]) / len(t1)
     return trans_prob, ppeak, pfast, ptime, cmax
