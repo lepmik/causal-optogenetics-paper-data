@@ -88,11 +88,11 @@ class IV:
         cch_miss, bins_ = correlogram(
             stim_miss, self.target,
             binsize=binsize, limit=limit, density=False)
-        cch_full = cch_hit + cch_miss
+        cch_diff = cch_hit - cch_miss
         assert np.array_equal(bins, bins_)
         result = {'cch_hit': cch_hit,
                   'cch_miss': cch_miss,
-                  'cch_full': cch_full,
+                  'cch_diff': cch_diff,
                   'bins': bins}
         setattr(self, '_cch', result)
         return result
@@ -102,7 +102,7 @@ class IV:
         if hasattr(self, '_p'):
             return getattr(self, '_p')
         cch_s = cch_convolve(
-            cch=self.cch['cch_full'], width=self.p['width'],
+            cch=self.cch['cch_diff'], width=self.p['width'],
             hollow_fraction=self.p['hollow_fraction'],
             kerntype=self.p['kerntype'])
         mask = ((self.cch['bins'] >= self.latency) &
@@ -111,9 +111,9 @@ class IV:
         idx, = np.where(self.cch['cch_hit']==hit_max * mask)
         idx = idx if len(idx) == 1 else idx[0]
         pfast, = poisson_continuity_correction(hit_max, cch_s[idx])
-        cch_half_len = int(np.floor(len(self.cch['cch_full']) / 2.))
+        cch_half_len = int(np.floor(len(self.cch['cch_diff']) / 2.))
         ppeak, = poisson_continuity_correction(
-            np.max(self.cch['cch_full'][:cch_half_len]), hit_max)
+            np.max(self.cch['cch_diff'][:cch_half_len]), hit_max)
         ptime = float(self.cch['bins'][idx])
         pcausal, = poisson_continuity_correction(
             self.cch['cch_hit'][idx], self.cch['cch_miss'][idx])
