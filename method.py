@@ -7,7 +7,7 @@ from cross_correlation import (correlogram, poisson_continuity_correction,
 import seaborn as sns
 
 
-def hist_stim(stim_times, source, target, period, winsize, latency):
+def hist_stim(stim_times, source, target, winsize, latency):
     hist = np.zeros([len(stim_times), 2])
     src = np.searchsorted
     hist[:, 0] = (
@@ -50,7 +50,7 @@ class IV:
         self.winsize = winsize
         self.lams = np.array(
             hist_stim(stim_times, source, target,
-                      self.period, self.winsize, self.latency))
+                      self.winsize, self.latency))
         self.StimRef = self.lams[:, 0] == 0
         self.Stim = self.StimRef == False
 
