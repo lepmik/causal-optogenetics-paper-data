@@ -6,19 +6,20 @@ from cross_correlation import (correlogram, poisson_continuity_correction,
                                cch_convolve)
 import seaborn as sns
 
+
 def hist_stim(stim_times, source, target, period, winsize, latency):
     hist = np.zeros([len(stim_times), 2])
     src = np.searchsorted
-    for idx, t in enumerate(stim_times):
-        hist[idx,:] = (
-          # stim response
-          src(source, t, 'left') <
-          src(source, t + winsize, 'right'),
-          # stim synaptic response
-          src(target, t + latency, 'left') <
-          src(target, t + latency + winsize, 'right')
-          )
+    hist[:, 0] = (
+        # stim response
+        src(source, stim_times, 'left') <
+        src(source, stim_times + winsize, 'right'))
+    hist[:, 1] = (
+        # stim synaptic response
+        src(target, stim_times + latency, 'left') <
+        src(target, stim_times + latency + winsize, 'right'))
     return hist
+
 
 class IV:
     def __init__(self, source, target, stim_times,
