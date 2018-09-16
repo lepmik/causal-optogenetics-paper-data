@@ -33,6 +33,10 @@ class IV:
             putative receiver neuron
         stim_times : array
             stimulation times
+        winsize : float
+            size of window around PSTH
+        latency : float
+            time untill response of post-synaptic neuron (begining of PSTH peak)
         '''
         p = {
             'width': 10,

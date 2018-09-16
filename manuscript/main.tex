@@ -12,7 +12,6 @@
 \usepackage{booktabs}
 \usepackage{natbib}
 \usetikzlibrary{arrows,shapes,calc}
-\tikzset{line/.style = {draw, -latex', ultra thick}}
 \newcommand{\abs}[1]{\left|{#1}\right|}
 \newcommand{\pde}[2]{{\frac{\partial {#1}}{\partial {#2}}}}
 \newcommand{\pdde}[2]{\frac{\partial^2 {#1}}{\partial {#2}^2}}
@@ -36,17 +35,19 @@
 %opening
 \title{Inferring causal connectivity from pairwise recordings and optogenetics}
 %\title{The need to combine optogenetics with neural recordings to estimate causal connectivity}
-\author{Mikkel Elle Lepper\o{}d, Konrad Paul Kording}
+\author{Mikkel Elle Lepper\o{}d, Tristan St$\ddot{\text{o}}$ber, Konrad Paul Kording}
 
 \begin{document}
 
  \maketitle
 
 \begin{abstract}
-\noindent Neuroscientists often want to identify how neurons causally interact. Perturbations with optogenetics are a popular way of quantifying such interactions. However, even focused light will typically stimulate multiple cells, which produces a confound - we cannot know which of the stimulated neurons affected the activity of a given target neuron. Here we show how this confound produces large biases in estimates of connectivity, and how we can reduce these biases by a data analysis strategy that exploits the absolute refractory period of neurons. We use the instrumental variable (IV) framework from economics which estimates causal strengths by exploiting a variable that affects only one of the variables, here the presynaptic neuron. The interaction between optogenetic stimulation and the absolute refractory period produces a weak almost random signal (IV) that we exploit to solve the causal inference problem. In a simple simulation of integrate and fire neurons, we find that instrumental variable techniques estimate connectivity better than naive techniques (99.8\% vs 86\% correct). Our instrumental variable approach is robust and easy to implement in the context of current experimental paradigms.
+\noindent Neuroscientists often want to identify how neurons causally interact. Perturbations with optogenetics are a popular way of quantifying such interactions. However, even focused light will typically stimulate multiple cells, which produces a confound - we cannot know which of the stimulated neurons affected the activity of a given target neuron. Here we show how this confound produces large biases in estimates of connectivity, and how we can reduce these biases by a data analysis strategy that exploits the absolute refractory period of neurons. We use the instrumental variable (IV) framework from economics which estimates causal strengths by exploiting a variable that affects only one of the variables, here the presynaptic neuron. The interaction between optogenetic stimulation and the absolute refractory period produces a weak almost random signal (IV) that we exploit to solve the causal inference problem. In a simple simulation of integrate and fire neurons, we find that instrumental variable techniques estimate connectivity better than naive techniques (99.8\% vs 0.6\% correct). Our instrumental variable approach is robust and easy to implement in the context of current experimental paradigms.
 \end{abstract} 
 
 \section{Introduction}
+
+\todo[inline]{Cite Konrad's new paper}
 % neuroscience experiments are observational which implicates a certain set of statistical tools
 % spike timing cannot give a causal estimate of connectivity, thus we need to perturbe the system
 %a quest for causality and optogenetics is a main tool
@@ -65,7 +66,7 @@ To estimate connectivity it is first and foremost important that it stems from c
 To estimate causal relationships between neurons, stimulating the pre-synaptic neuron is the gold standard. In fact, a common definition of causality is in terms of what would happen if one would change the value of one variable in the system, independently of changing other variables -- an intervention \citep{pearl2009causality}. If we stimulate single neurons, the ability to estimate causal relationships by regression is within reach. However, this is experimentally challenging and yield low cell count because it either requires intracellular, juxtacellular or two-photon stimulation \citep{pinault1996novel, lerman2017two, nikolenko2007two, emiliani2015all}. Because gold-standard perturbations are challenging, it would be highly desirable if causality could be obtained from optogenetic stimulation  \citep{boyden2005millisecond, zemelman2002selective}.
 
 %optogenetics is totally nonlocal
-Interpreting the results of optogenetic stimulation in terms of causal interactions is difficult. The expression of opsins are often restricted to a population of neurons, but regular optogenetic stimulation will still affect many neurons simultaneously. In \textit{in vivo} settings it is generally impossible to direct photons to only one neuron. Hence, the stimulus will produce a distributed pattern of activity. For example, if we focus a stimulation beam on one neuron, there will be a cone of light in front of and behind the neuron, which comes from the rays of light from the lens focused on the cell and again coming out on the backside.. This distributed pattern of stimulation produces activity which then percolates through the network of neurons. Thus any post-synaptic activity induced by stimulation could in principle come from any of the stimulated neurons introducing problematic confounders.
+Interpreting the results of optogenetic stimulation in terms of causal interactions is difficult. The expression of opsins are often restricted to a population of neurons, but regular optogenetic stimulation will still affect many neurons simultaneously. In \textit{in vivo} settings it is generally impossible to direct photons to only one neuron. Hence, the stimulus will produce a distributed pattern of activity. For example, if we focus a stimulation beam on one neuron, there will be a cone of light in front of and behind the neuron, which comes from the rays of light from the lens focused on the cell and again coming out on the backside. This distributed pattern of stimulation produces activity which then percolates through the network of neurons. Thus any post-synaptic activity induced by stimulation could in principle come from any of the stimulated neurons introducing problematic confounders.
 
 
 %causal inference is a thing, if not done well you say stupid things
@@ -85,20 +86,20 @@ Here we show that the instrumental variable (IV) technique can be employed if on
 
 \section{Results}
 \subsection{Optogenetics is not local}
-Optogenetics is generally seen as a perturbation method that by and large affects neurons in close proximity of the light source. However, it can be questioned if this is the correct way of conceptualizing the spatial effect of stimulation. The stimulation effects depend on multiple factors. Firstly, light intensity and opsin density are important as more light and ion channels will cause a stronger effect on each cell. Secondly, the number of potentially stimulated neurons is critical as more neurons will have a larger impact on the overall population activity. Lastly, physiological properties of the cells are important as light may e.g. only have a strong effect on spiking activity when the membrane potential of the cell is sufficiently close to the firing threshold. The induced effect of optogenetic stimulation as a function of distance should be the product of four parameters:  light intensity, spatial distribution of neurons, distributions of membrane potential across neurons, and opsin distribution across neurons.
+Optogenetics is generally seen as a perturbation method that by and large affects neurons in close proximity of the light source. However, it can be questioned if this is the correct way of conceptualizing the spatial effect of stimulation. The stimulation effects depend on multiple factors. Firstly, light intensity and opsin density are important as more light and ion channels will cause a stronger effect on each cell. Secondly, the number of potentially stimulated neurons is critical as more neurons will have a larger impact on the overall population activity. Lastly, physiological properties of the cells are important as light may e.g. only have a strong effect on spiking activity when the membrane potential of the cell is sufficiently close to the firing threshold. The induced effect of optogenetic stimulation as a function of distance should be given by a relation of the four parameters: light intensity, spatial distribution of neurons, distributions of membrane potential across neurons, and opsin distribution across neurons.
 
-To estimate the light intensity we calculated the spatial extent of laser light delivered by fiber-optics under plausible experimental conditions according to \cite{Aravanis2007}; see \cref{sec:method:opto}. This modeling of light intensity yield an approximately $ 1/r^2 $ reduction with distance $ r $ from the stimulation site \cref{fig:concept} (cyan line). This is explained by the surface of the 3D shell growing with $4\pi r^2$ and photons will be roughly isotropic beyond the scattering length \cref{fig:concept} (inset). The same number of photons has to cross each of the spheres around the stimulation location unless they are absorbed. The density of photons thus decreases rapidly with distance.
+To estimate the light intensity we calculated the spatial extent of laser light delivered by fiber-optics under plausible experimental conditions according to \citet{Aravanis2007}; see \cref{sec:method:opto}. This modeling of light intensity yield an approximately $ 1/r^2 $ reduction with distance $ r $ from the stimulation site \cref{fig:concept} (cyan line). This is explained by the surface of the 3D shell growing with $4\pi r^2$ and photons will be roughly isotropic (but see \citep{thunemann2018does}) beyond the scattering length \cref{fig:concept} (inset). The same number of photons has to cross each of the spheres around the stimulation location unless they are absorbed. The density of photons thus decreases rapidly with distance.
 
 The number of illuminated neurons at a given distance will be larger the further away they are from the stimulation site given that neurons are uniformly distributed in brain tissue \cref{fig:concept} (black line). In fact, it will increase by approximately $ r^2 $ with distance. This derives from the same surface scaling as for the 3D shell. Thus the number of neurons that can be activated increases rapidly with distance.
 
-To estimate the effect of stimulation, the functionality underlying spiking activity needs to be considered. This can largely be characterized by the  distribution of membrane potentials across neurons. Surprisingly, this distribution has been observed to be symmetrically distributed and relatively flat \citep{pare1998impact,destexhe1999impact,rudolph2006use}. The response that is expected due to a pulse of light that induces a charge $Q$ should be proportional to the density of neurons whose membrane potential sit within a $Q/C$ range of the threshold ($C$ is the capacitance). The fact that the distribution of membrane potentials is relatively flat (the density close to the threshold is generally within an order of magnitude of the density of its mode) suggests that the response in membrane potential to a perturbation for any neuron is roughly proportional to the light intensity. Moreover, assuming that opsins are evenly distributed along the neuron, the opsin density in the neuron population will be relatively even. Based on this, we calculate the overall stimulation effect to be the product of neuron density and light intensity which is approximately constant in distance (up to the distance where absorption becomes important) \cref{fig:concept} (blue line). Thus, optogenetic stimulation utilizing single photon activation does not actually produce a localized effect. 
+To estimate the effect of stimulation, the functionality underlying spiking activity needs to be considered. This can largely be characterized by the  distribution of membrane potentials across neurons. Surprisingly, this distribution has been observed to be symmetrically distributed and relatively flat \citep{pare1998impact,destexhe1999impact,rudolph2006use}. The response that is expected due to a pulse of light that induces a charge $Q$ should be proportional to the density of neurons whose membrane potential sit within a $Q/C$ range of the threshold ($C$ is the capacitance). The fact that the distribution of membrane potentials is relatively flat (the density close to the threshold is generally within an order of magnitude of the density of its mode) suggests that the spiking response to a perturbation for any neuron is roughly proportional to the induced photo current. The peak amplitude of the photo current relates non-linearly to the light intensity and can be modelled by the Hill equation \citep{wang2007high}. Moreover, assuming that opsins are evenly distributed along the neuron, the opsin density in the neuron population will be relatively even. Based on this, we calculate the overall stimulation effect to be the product of the number of neurons in a spherical slice and the peak amplitude photo current which actually increases with distance (up to the distance where absorption becomes important) \cref{fig:concept} (blue line). Thus, optogenetic stimulation utilizing single photon activation does not produce a localized effect. 
 
 \begin{figure}\includegraphics[scale=1]{opto-powerlaw}
-\caption{{\bf Spatial extent of optogenetic stimulus}. Due to scattering and geometric loss the light intensity (I, cyan line) plotted as percentage of intensity exiting the optogenetic fiber follows approximately an inverse square law $ r^{-2} $ where $ r $ is the distance from the fiber. If neurons are uniformly distributed the number of affected neurons increase by $ r^{2} $ (N, black line) rendering the probability of activating a neuron approximately constant (IN, blue line). \label{fig:concept}}
+\caption{{\bf Spatial extent of optogenetic stimulus}. Due to scattering and geometric loss the light intensity (I, cyan line) with an intensity of $10 mW/mm^2$ exiting the optogenetic fiber follows approximately an inverse square law $ r^{-2} $ where $ r $ is the distance from the fiber. If neurons are uniformly distributed the number of affected neurons increase by $ r^{2} $ (N, black line). The total photo current (sum of single neuron currents) thus increases by distance due to the nonlinear relation between photo intensity and photo current (P, blue line). \label{fig:concept}}
 \end{figure}
-
+\FloatBarrier
 \subsection{Confounding as a problem for the estimation of causal effects}
-When we stimulate many neurons at the same time, and observe a post-synaptic neuron to be active after our stimulation, it is hard to know which of the stimulated neurons produced the activity. To illustrate such confounding effects we simulated a network comprised of three neurons (A,B, and C). The neurons receive Poisson spike trains and have added Gaussian white noise to the membrane potential. We also gave them interactions, where spikes of neuron B increase the probability of firing for neuron C but there are no other interactions \cref{fig:intro}\labelcref{fig:intro:1}.
+When we stimulate many neurons at the same time, and observe a post-synaptic neuron to be active after our stimulation, it is hard to know which of the stimulated neurons produced the activity. To illustrate such confounding effects we simulated a network comprised of three neurons (A,B, and C) \cref{fig:intro}\labelcref{fig:intro:1}. The neurons receive Poisson spike trains and have added Gaussian white noise to the membrane potential. We also gave them interactions, where spikes of neuron B increase the probability of firing for neuron C but there are no other interactions.
 Finally, we allowed simulated optogenetic stimulation to affect neurons A and B (but not C). We thus have a simple system for exploring questions of causality.
 
 After running the simulation, the peri-stimulus time histogram of the stimulated neurons show the result of both the stimulation itself (suppressed for visibility) and the neuron's refractory period \cref{fig:intro}\labelcref{fig:intro:2} (AA, BB).  Since the stimulation affects A and B simultaneously, it induces a strong correlation between A and B \cref{fig:intro}\labelcref{fig:intro:3} (AB). This further generates a strong correlation between A and C, confounding the system by rendering the cross correlation histograms (CCHs) between BC and AC both statistically significant ($ p_{\mathrm{fast}} < 0.001, p_{\mathrm{diff}} < 0.001 $; see \cref{sec:method:cch}) shown in \cref{fig:intro}\labelcref{fig:intro:3}. Even though the correlation peak between B and C is larger than between A and C due to correlated spikes outside the periods with stimulation one may imagine a situation where only A and C is measured, giving rise to a false prediction that they are connected. If stimulation affects multiple neurons simultaneously, there is a real confounding problem.
@@ -121,22 +122,19 @@ After running the simulation, the peri-stimulus time histogram of the stimulated
 \caption{{\bf A,B,C network}. A sketch of the simple network containing three neurons %depicted in \labelcref{fig:intro:3} 
 shows stimulation configuration with blue laser light and the connections with arrows (a). The neurons A and B are stimulated 1000 trials and the corresponding peristimulus time histogram are shown in \labelcref{fig:intro:2} upper panel with a raster plot in the lower panel. Cross correlation histograms (CCHs) are shown in \labelcref{fig:intro:3} where horizontal and vertical axes represents time lag in ms and counts of coincident spikes in bins of 1 ms. \label{fig:intro}}
 \end{figure}
-
+\FloatBarrier
 \subsection{Instrumental variables to resolve confounding}
 In order to estimate the actual influence of stimulation of a neuron on post-synaptic neurons we need something that can distinguish the influence of one stimulated neuron from the influence of another stimulated neuron. We would thus need something that affects the stimulation effect separately between neurons. Arguably, refractoriness is such a variable. If a neuron is in its absolute refractory period, then no amount of stimulation will make it spike. This gives us an interesting way of getting at causality, by comparing the network state between a time when a neuron is able to spike and a time where the neuron is unable to spike.
 
 Instrumental variables requires the existence of a random (or sufficiently random) variable that affects a variable of interest. This independent influence among neurons then allows quantifying the influence of the variable of interest on the rest of the network. In our case, the refractory states of a neuron is in good approximation independent on small time scales (see Discussion for caveats). It affects the influence of stimulation on the potentially pre-synaptic neuron (\cref{fig:cchvswald}\labelcref{fig:cchvswald:0}). The trials where a stimuli is unable to elicit a spike due to the refractory state can then be used to identify causal effect on the potentially post-synaptic neuron.
 
 We can now investigate if the use of an instrumental variable gives a better estimate of connectivity strength than simply analyzing the lagged correlations by means of the CCH; see \cref{eq:ptrans}. We thus use the IV estimator \cref{eq:wald} on the three neuron system (\cref{fig:cchvswald}\labelcref{fig:cchvswald:1,fig:cchvswald:2}). It converges to the correct causal conclusions that the weights $ w_{BC} = 0.2 $ and $ w_{AC} = 0 $. For such a simple system, it produces meaningful estimates of the causal interactions between neurons.
-
+\tikzset{line/.style = {draw, -latex', ultra thick}}
 \begin{figure}
 \makeatletter
 \renewcommand\p@subfigure{}
 \makeatother
 \begin{subfigure}{0.485\textwidth} \centering
-% * <tristan.stoeber@posteo.net> 2018-06-24T21:23:23.987Z:
-% What is S?
-% ^.
 \begin{tikzpicture}
     \node (u) {$ S $};
     \node [above = of u] (x) {$ A/B $};
@@ -161,12 +159,12 @@ We can now investigate if the use of an instrumental variable gives a better est
 \includegraphics[scale=1]{wald_AC}
 \caption{} \label{fig:cchvswald:2}
 \end{subfigure}
-\caption{{\bf Instrumental variable estimation (IV) of connectivity}. \labelcref{fig:cchvswald:0} In an instrumental variable estimation procedure we use a variable that is assumed to be random (here refractoriness) which influences a variable of interest (here spiking) and to use this influence to infer the causal interaction of that variable on other variables (here spiking of A or B onto C). \labelcref{fig:cchvswald:1} A popular estimation approach for IVs,  the Wald technique correctly estimates causal connectivity in the A,B,C neural network using the refractory period. Subfigure \labelcref{fig:cchvswald:0} shows a path diagram \citep{wright1921correlation} between the upstream neuron $ A $ or $ B $, the stimulation $ S $, the post-synaptic neuron $ C $ and the IV as $ A_{r} $ or $ B_{r} $. Arrows represent associations where $ S $ is associated with $ A,B $ and potentially also with $ C $ both directly and through $ A,B $. The IV estimator calculated by \cref{eq:wald} converges to $ \hat{\beta}_{BC} \approx 0.2, \hat{\beta}_{AC} \approx 0 $ after approximately $ 5000 $ trials as seen in \labelcref{fig:cchvswald:1,fig:cchvswald:2} respectively. % I would have put in a take home message / interpretation of the results in the figure text.
-Insets represent high resolution zoom of cross correlation histograms of BC and AC where horizontal and vertical axes represents time lag and counts of coincident spikes in bins of 0.1 ms respectively. \label{fig:cchvswald}}
+\caption{{\bf Instrumental variable estimation (IV) of connectivity}. \labelcref{fig:cchvswald:0} In an instrumental variable estimation procedure we use a variable that is assumed to be random (here refractoriness) which influences a variable of interest (here spiking) and to use this influence to infer the causal interaction of that variable on other variables (here spiking of A or B onto C). \labelcref{fig:cchvswald:1} A popular estimation approach for IVs,  the Wald technique correctly estimates causal connectivity in the A,B,C neural network using the refractory period. Subfigure \labelcref{fig:cchvswald:0} shows a path diagram \citep{wright1921correlation} between the upstream neuron $ A $ or $ B $, the stimulation $ S $, the post-synaptic neuron $ C $ and the IV as $ A_{r} $ or $ B_{r} $. Arrows represent associations where $ S $ is associated with $ A,B $ and potentially also with $ C $ both directly and through $ A,B $. The IV estimator calculated by \cref{eq:wald} converges to $ \hat{\beta}_{BC} \approx 0.2, \hat{\beta}_{AC} \approx 0 $ after approximately $ 5000 $ trials as seen in \labelcref{fig:cchvswald:1,fig:cchvswald:2} respectively. 
+ \label{fig:cchvswald}}
 \end{figure}
-
+\FloatBarrier
 \subsection{Larger simulated networks}
-The interacting neurons in a biological network exhibit inhibition and interact in many kinds of ways. To evaluate the IV method in a more meaningful setting we thus simulated a recurrent neural network consisting of 1250 randomly connected leaky integrate and fire neurons where 250 had inhibitory synapses. The network was tuned to be in an asynchronous regime; see \cref{fig:state}\labelcref{fig:CC} with log-normally distributed synaptic weights according to patch clamp experiments \citep{Sayer1990,Mason1991}; see \cref{fig:state}\labelcref{fig:syn_dist} and \cref{tab:params} for parameters. Further, we selected 800 excitatory neurons for stimulation and gave each neuron a random spatial distance from the simulated optogenetic stimulus. The stimulus intensity was then set according to \cref{eq:intensity} with a maximum of 10 pA, and was constant throughout trials. The trial onset had a temporal Poisson distribution with period 100 ms and was further clipped between 100-150 ms. For weight estimates we randomly selected among the excitatory population 50 stimulated neurons and 50 unstimulated neurons. 
+The interacting neurons in a biological network exhibit inhibition and interact in many kinds of ways. To evaluate the IV method in a more meaningful setting we thus simulated a recurrent neural network consisting of 1250 randomly connected leaky integrate and fire neurons where 250 had inhibitory synapses. The network was tuned to be in an asynchronous regime; see \cref{fig:state}\labelcref{fig:CC} with log-normally distributed synaptic weights according to patch clamp experiments \citep{Sayer1990,Mason1991}; see \cref{fig:state}\labelcref{fig:syn_dist} and \cref{tab:params} for parameters. Further, we selected 800 excitatory neurons for stimulation and gave each neuron a random spatial distance from the simulated optogenetic stimulus. The stimulus intensity was then set according to \cref{eq:intensity} with a maximum of 10 pA, and was constant throughout trials. The trial onset had a temporal Poisson distribution with period 100 ms and was further clipped between 100-150 ms. For weight estimates we randomly selected among the excitatory population 100 stimulated neurons and 100 unstimulated neurons. 
 
 To evaluate how well the IV method estimates the weights as a function of number of trials we calculated the mean squared error of the weight connecting the 100 neuron pairs \cref{fig:error}. As seen here, the IV estimator's precision decreases similarly in three different settings with varying amounts of relative inhibition $ g $.
 \begin{figure}
@@ -179,15 +177,15 @@ To evaluate how well the IV method estimates the weights as a function of number
 \end{subfigure}\medskip
 
 \begin{subfigure}{\textwidth} 
-\includegraphics[scale=1]{mse_pos}
+\includegraphics[scale=1]{mse}
 \caption{} \label{fig:error:mse}
 \end{subfigure}
-\caption{{\bf Mean square error (MSE) of IV estimator in a large network}. \labelcref{fig:error:raster} Excitatory neurons (in blue raster) are stimulated with varying intensity indicated by the y-axis in lower panel, upper panel shows inhibitory neurons (red raster) where y-axis indicate random neuron-id. \labelcref{fig:error:mse} The IV- and CCH estimator is evaluated for the asynchronous recurrent neural network at three different amounts of relative inhibition $ g $. The MSE as a function of number of trials is shown on a logarithmic scale where the slopes was found to be $ -0.77, -0.48, -0.40 $ for $g = 9.9, 4.4, 3.0$ respectively. \label{fig:error}}
+\caption{{\bf Mean square error (MSE) of IV estimator in a large network}. \labelcref{fig:error:raster} Excitatory neurons (in blue raster) are stimulated with varying intensity indicated by the y-axis in lower panel, upper panel shows inhibitory neurons (red raster) where y-axis indicate random neuron-id. \labelcref{fig:error:mse} The IV- and CCH estimator is evaluated for the asynchronous recurrent neural network at three different amounts of relative inhibition $ g $. The MSE as a function of number of trials is shown on a logarithmic scale where the slopes was found to be $ -0.67, -0.69, -0.45 $ for $g = 9.9, 4.4, 3.0$ respectively. \label{fig:error}}
 \end{figure}
 
-We want to compare the IV estimator which exploits the refractory period with the CCH method given by \cref{eq:ptrans} which ignores network confounding. To indicate the amount of connections which are falsely attributed a non-zero weight we calculated the amount of false positives. This was given as the percentage of estimated synapses larger than $ 0.05 $ where the true weight was $ 0 $, finding $ 13.3\% $ for CCH and $ 0.2\% $ for the IV estimator; see \cref{fig:network-class}\labelcref{fig:network-class:1}. In addition we compared the size of the estimations at false positive instances and found that the CCH have slightly higher median. The IV approach, while not being perfect, thus outperforms the simple CCH approach.
+We want to compare the IV estimator which exploits the refractory period with the CCH method given by \cref{eq:ptrans} which ignores network confounding. We defined hit rate as the relative amount of stimulations in non-refractory states and required a minimum of 90$\%$. To indicate the amount of connections which are falsely attributed a non-zero weight we calculated the amount of false positives. This was given as the percentage of estimated synapses larger than $ 0.05 $ where the true weight was $ 0 $, finding $ 99.4\% $ for CCH and $ 0.2\% $ for the IV estimator; see \cref{fig:network-class}\labelcref{fig:network-class:1}. In addition we compared the size of the estimations at false positive instances and found that the CCH have significantly higher median than IV (p=0, difference ($\Delta$) = 0.17, permutation resampling \citep{wassermann2006all}). The IV approach, while not being perfect, thus outperforms the simple CCH approach.
 
-It might be that modeling refractory periods in the context of a naive regression estimates connectivity equally well as the IV method. We thus performed a logistic regression as seen in \cref{fig:network-class}\labelcref{fig:network-class:1} denoted LOGIT. As seen here, LOGIT performs even worse than CCH showing that it really helps to use the refractory period as an instrumental variable. To further evaluate the methods we calculated false negatives as instances where the true weight is non-zero but estimated to be equal to zero in \cref{fig:network-class}\labelcref{fig:network-class:2} showing that the CCH and IV estimators performs equally well. Finally we wanted to evaluate the estimated weights as a function of true weights shown in \cref{fig:network-class}\labelcref{fig:network-class:3,fig:network-class:4} after 30000 trials. The IV estimator yields a good prediction $ r^2 = 0.55 $, while the CCH estimator performs surprisingly bad with $ r^2 = 0.002 $. Utilizing refractory periods as an (imperfect) instrumental variable considerably improves estimates.
+It might be that modeling refractory periods in the context of a naive regression estimates connectivity equally well as the IV method. We thus performed a logistic regression as seen in \cref{fig:network-class}\labelcref{fig:network-class:1} denoted LOGIT. As seen here, LOGIT performs even worse than CCH showing that it really helps to use the refractory period as an instrumental variable (p=0, $\Delta$ = 0.7, permutation resampling). To further evaluate the methods we calculated false negatives as instances where the true weight is non-zero but estimated to be equal to zero in \cref{fig:network-class}\labelcref{fig:network-class:2} showing that the CCH and IV estimators performs equally well (p=0.78, $\Delta$ = 0.021, permutation resampling). Finally we wanted to evaluate the estimated weights as a function of true weights shown in \cref{fig:network-class}\labelcref{fig:network-class:3,fig:network-class:4} after 30000 trials. The IV estimator yields a good prediction ($ R^2 = 0.845 $), while the CCH mainly estimates the strength of stimulation while true weights are poorly estimated ($ R^2 = 0.048 $). Utilizing refractory periods as an (imperfect) instrumental variable considerably improves estimates.
 
 \begin{figure}
 \makeatletter
@@ -199,23 +197,38 @@ It might be that modeling refractory periods in the context of a naive regressio
 \begin{subfigure}{0.485\textwidth} \includegraphics[scale=1]{false_negative}
 \caption{} \label{fig:network-class:2}
 \end{subfigure}
-% * <tristan.stoeber@posteo.net> 2018-06-24T21:29:41.690Z:
-% 
-% Why is logit not considered for false negatives?
-% 
-% ^.
 
 \medskip
-\begin{subfigure}{0.46\textwidth} \includegraphics[scale=1]{fit_wald_pos}
+\begin{subfigure}{0.46\textwidth} \includegraphics[scale=1]{fit_wald}
 \caption{} \label{fig:network-class:3}
 \end{subfigure}\hfill
-\begin{subfigure}{0.6\textwidth} \includegraphics[scale=1]{fit_cch_pos}
+\begin{subfigure}{0.6\textwidth} \includegraphics[scale=1]{fit_cch}
 \caption{} \label{fig:network-class:4}
 \end{subfigure}
-\caption{{\bf False estimates and goodness of fit}. False positives are shown in \labelcref{fig:network-class:1} for the cross correlation histogram (CCH) method, logistic regression (LOGIT) and the IV estimator. False negatives for CCH and IV is shown in \labelcref{fig:network-class:2}. Positive estimates of weight as a function of true weight is scattered for the IV estimator in \labelcref{fig:network-class:3} and CCH in \labelcref{fig:network-class:4} color coded by the size of perturbation intensity. Shaded area show the 95 \% confidence interval calculated by bootstrapping.
+\caption{{\bf False estimates and goodness of fit}. False positives are shown in \labelcref{fig:network-class:1} for the cross correlation histogram (CCH) method, logistic regression (LOGIT) and the IV estimator. False negatives for CCH and IV is shown in \labelcref{fig:network-class:2}. Positive estimates of weight as a function of true weight is scattered for the IV estimator in \labelcref{fig:network-class:3} and CCH in \labelcref{fig:network-class:4} color coded by the size of perturbation intensity. Shaded area show the 95 \% confidence interval calculated by bootstrapping. Data were obtained from simulation of model 2 \cref{tab:params}.
 \label{fig:network-class}}
 \end{figure}
+\FloatBarrier
+\subsection{Application to hippocampal recordings with Optotrodes}
+% % aim: test method on state of the art, publicly available data of optostimulation
+%   % compare results for transmission probability and wald estimate
+\begin{figure}
+\makeatletter
+\renewcommand\p@subfigure{}
+\makeatother
+\begin{subfigure}{0.4\textwidth}
+\includegraphics[width=1.\textwidth]{Optotrode.jpg}
+\caption{} \label{}
+\end{subfigure}\hfill
+\begin{subfigure}{0.6\textwidth}
+\includegraphics[width=1.\textwidth]{Optodata_IVvsCCH.pdf}
+\caption{} \label{}
+\end{subfigure}
 
+\caption{}.
+\label{fig:optotrodedata}
+ \end{figure}
+\FloatBarrier
 \section{Discussion}
 %% maybe add somewhere that using other recorded neurons may be useful as well.
 
@@ -239,7 +252,7 @@ Very weak laser pulses in noisy networks might only affect very few neurons each
 For the refractory period to be a good instrument, it is necessary that it is not overly affected by the network activity. This clearly is going to be problematic in many cases, after all the network activity affects refractoriness. However, there are multiple scenarios where refractoriness will be a good instrument. For example, if we have balanced excitation and inhibition we may expect largely independent refractory states of individual neurons. If a neuron biophysically implements something like conditional Poisson spiking its refractory states will be random. Even if neurons refractory states are strongly correlated during normal network operation there may be ways of randomizing them. Giving one burst of stimulation which is strong enough to elicit multiple spikes from each neuron may effectively randomize the phase of each neuron \citep{ermentrout2008reliability}. Importantly, we may expect the phase of a neuron to be far more random than the activity of the network as a whole.
 
 %Still some troubles
-We found some negative values of the IV estimator which were suppressed as we knew that we only stimulated excitatory neurons. This happens because some neurons  have correlated refractory times which we hypothesize to be mainly due to synchrony induced by the stimulation \citep{ermentrout2008reliability}. This hypothesis was strengthened by observing that this negative values did not occur when the stimulation intensity was set to zero (data not shown). Furthermore, respective simulated neural network introduces much response overlap due to synapses having identical synaptic time constants and transfer delays. This makes inference quite hard since multiple neurons are affecting the same cell at the same time for each stimulation.  However, this is less likely to occur in biological networks, which have high variability of synaptic properties and where firing patterns are sparser. These biological aspects would most likely work to the advantage of the IV method. Independence of refractoriness would be further improved, if in addition a clever stimulation routine was implemented such that the distribution of stimulation strength varies spatially from trial to trial.
+We found some negative values of the IV estimator which were largely suppressed by requiring a hit rate $ < 90\%$. Hit rates larger than $90\%$ happens mainly at strong stimulation intensity which lower statistical power in the IV and can lead to correlated refractory times. We hypothesize strong stimulations can lead to synchrony induced by the stimulation \citep{ermentrout2008reliability}. This hypothesis was strengthened by observing that the negative values did not occur when the stimulation intensity was set to zero (data not shown). Furthermore, respective simulated neural network introduces much response overlap due to synapses having identical synaptic time constants and transfer delays. This makes inference quite hard since multiple neurons are affecting the same cell at the same time for each stimulation.  However, this is less likely to occur in biological networks, which have high variability of synaptic properties and where firing patterns are sparser. These biological aspects would most likely work to the advantage of the IV method. Independence of refractoriness would be further improved, if in addition a clever stimulation routine was implemented such that the distribution of stimulation strength varies spatially from trial to trial.
 
 % Importance of randomized stimulus times and short pulses 
 The independence of refractory times is the one factor which makes or breaks the IV approach. Therefore we may think of ways of making the refractoriness distribution more random. First, it would help to use a task and situation where neurons are as uncorrelated as possible. Second, we may use a set of conditioning pulses of stimulation to increase independence of refractory states. Third, we may utilize chemical, behavioral, or molecular perturbations to randomize refractoriness. There has not, to the authors knowledge, been any attempts in neuroscience to randomize times of refractory states, so there may be a lot of possibilities to improve.
@@ -256,6 +269,7 @@ There are many techniques for causal inference and most of them are largely unkn
 %If we assume that the assumption of random refractory periods are violated somehow by the physiology, e.g.a very synchronized network. To ameliorate one could introduce multiple light sources that is activated in a randomized fashion such that the intensity distribution is randomized. This could be realized with e.g. laser holograms/filter or multiple micro LEDs This would in addition increase the amount of neurons targeted and thus give larger experimental yield. Another possibility is to design opsins that have a fluctuating baseline levels randomizing membrane potential of affected neurons, however this could also lead to a chronic deficit in respective neural network and would thus shorten the time span of the experimental procedure. But importantly, designing experiments so that causal inference is possible should be a major consideration for experimental design.
 
 \section{Methods}
+\tikzset{line/.style = {draw, -latex', thick}}
 \subsection{Instrumental variable estimation}
 A simple approximation of the connectivity strength between a pre-synaptic neuron $ x $ and post-synaptic neuron $ y $ can be to ignore external excitation and simply calculate the relation between the spike times in $ x $ and $ y $ with a regression model given by
 
@@ -263,13 +277,13 @@ A simple approximation of the connectivity strength between a pre-synaptic neuro
 y = \beta x + u.
 \label{eq:regress}
 \end{equation}
-Here $ y $ is the dependent variable, $ x $ is the explanatory variable, $ \beta $ is the effect of the $ x$ on $y $ and $ u $ is an unknown error term. \Cref{eq:regress} follows from the causal path diagram (invented by \cite{wright1921correlation})
+Here $ y $ is the dependent variable, $ x $ is the explanatory variable, $ \beta $ is the effect of the $ x$ on $y $ and $ u $ is an unknown error term. \Cref{eq:regress} follows from the causal path diagram \citep{wright1921correlation,wright1923theory}
 \begin{center}
 \begin{tikzpicture}
     \node (u) {$ u $};
     \node [above = of u] (x) {$ x $};
     \node [above right = of u] (y) {$ y $};
-    \path [line] (x) -- (y);
+    \path [line] (x) -- (y) node [midway, above] {$ \beta $};
     \path [line] (u) -- (y);
 \end{tikzpicture}
 \end{center}
@@ -284,33 +298,33 @@ Corresponding to the following path diagram
     \node (u) {$ u $};
     \node [above = of u] (x) {$ x $};
     \node [above right = of u] (y) {$ y $};
-    \path [line] (x) -- (y);
+    \path [line] (x) -- (y) node [midway, above] {$ \beta $};
     \path [line] (u) -- (x);
     \path [line] (u) -- (y);
 \end{tikzpicture}
 \end{center}
-Here we have the relation $ \de{y}{x} = \beta + \de{u}{x} $. To get at causality we thus require some stimulation that only highlight the activity in $ y $ caused by $ x $, disassociating $x$ from $u$. However, the optogenetic stimulation is not specific to $x$ and will activate parts of the network activity $ u $. Let us assume that the stimulus renders only a subset of $u$ correlated with $x$, namely $u_s$ ($s$ denotes stimulated). To disassociate $x$ from $u_s$ we need something that can distinguish between different neurons that are stimulated. We thus require some instrument $ x_{s_r} $ which is (1) uncorrelated with the network $ u $ and (2) is correlated with the regressor $ x $ \citep{angrist2008mostly}. We assume that the neurons are independent at small time scales and that stimulation additionally randomize membrane potential individually in neurons. We may thus use the fact that a neuron that has fired just before the stimulation will be in an absolute refractory state and hence have $ x_{s_r}=0 $ independently of $u$, where the subscript $s_r$ denotes stimulation during refractory state. This introduces times where the spike from one of the stimulated neurons are missing. Thus we may use the refractory period as an instrumental variable, as illustrated with the following path diagram
+Here we have the relation $ \de{y}{x} = \beta + \de{u}{x} $. To get at causality we thus require some stimulation that only highlight the activity in $ y $ caused by $ x $, disassociating $x$ from $u$. However, the optogenetic stimulation is not specific to $x$ and will activate parts of the network activity $ u $. Let us assume that the stimulus renders only a subset of $u$ correlated with $x$, namely $u_s$ ($s$ denotes stimulated). To disassociate $x_s$ from $u_s$ we need something that can distinguish between different neurons that are stimulated. We thus require some instrument $ x_{s_r} $ which is (1) uncorrelated with the network $ u $, (2) is correlated with the regressor $ x_s $ and (3) not correlated with $ y $ \citep{angrist2008mostly}. We assume that the neurons are independent at small time scales and that stimulation additionally randomize membrane potential individually in neurons. We may thus use the fact that a neuron that has fired just before the stimulation will be in an absolute refractory state and hence have $ x_{s_r}=0 $ independently of $ u $, where the subscript $ s_r $ denotes stimulation during refractory state. This introduces times where the spike from one of the stimulated neurons are missing. Thus we may use the refractory period as an instrumental variable, as illustrated with the following path diagram
 
 \begin{center}
 \begin{tikzpicture}
     \node (u) {$ u_s $};
-    \node [above = of u] (x) {$ x $};
+    \node [above = of u] (x) {$ x_s $};
     \node [above right = of u] (y) {$ y $};
     \node [left = of x] (sr) {$ x_{s_r} $};
-    \path [line] (x) -- (y);
+    \path [line] (x) -- (y) node [midway, above] {$ \beta $};
     \path [line] (u) -- (x);
     \path [line] (u) -- (y);
     \path [line] (sr) -- (x);
 \end{tikzpicture}
 \end{center}
-Here $ x_r $ represent times where the pre-synaptic neuron is refractory during stimulation. This is then an estimator that compares the post-synaptic activity when a given neuron is non-refractory with the post-synaptic activity when it is refractory, thus removing the confounding. The true $ \beta $ is given by
-% * <tristan.stoeber@posteo.net> 2018-06-24T22:11:38.685Z:
-% Shouldnt it be  $ x_s_r $
-% ^.
+Here $ x_{s_r} $ represent times where the pre-synaptic neuron is refractory during stimulation. The true $ \beta $ is given by \citep{wright1928tariff}
+
 \begin{equation}
 \beta_{IV} = \de{y}{x_{s_r}} / \de{x}{x_{s_r}}
 \end{equation}
-Since our instrument $ x_{s_r} $ is binary we may use the IV (or more precisely Wald) estimator \citep{wald1940fitting} to estimate $ \beta_{IV} $ by
+This is then an estimator that compares the post-synaptic activity when a given neuron is non-refractory with the post-synaptic activity when it is refractory, thus removing the confounding.
+
+Since our instrument $ x_{s_r} $ is binary we may calculate the IV (or more precisely Wald) estimator \citep{wald1940fitting} $ \beta_{IV} $ by
 \begin{equation}
  \hat{\beta}_{IV} = \frac{\bar{y}_{s} - \bar{y}_{s_r}}{\bar{x}_{s} - \bar{x}_{s_r}} = \bar{y}_{s} - \bar{y}_{s_r}
  \label{eq:wald}
@@ -320,7 +334,7 @@ Here $ \bar{y}_s $ is the average number of trials where successfully stimulatin
 To utilize the refractory period as an IV we first picked out one window of $ 4 $ ms for each of the pre-synaptic and post-synaptic neuron with a latency relative to stimulation time of $ 0 $ and $ \tau_{syn} + D $ ms (see \cref{eq:syn}) respectively. By classifying each window for each trial whether $x$ contained a spike we obtained the two binary arrays $ y_s $ and $ y_{sr} $.
 
 \subsection{Cross correlation histogram}\label{sec:method:cch}
-The statistical tests giving the probabilities $ p_{diff} $ and $ p_{fast} $ were done according to \cite{Stark2009, English2017}. Briefly, to test if the cross correlation histogram (CCH) peak was significant we employed two tests. By using the Poisson distribution with a continuity correction \citep{Stark2009} given by \cref{eq:poissoncontcor} we calculated $ p_{diff} $ by comparing the peak in positive time lag with the maximum peak in negative time lag \citep{English2017}. The probability $ p_{fast} $ represents the difference between CCH and it's convolution with a hollow Gaussian kernel \citep{Stark2009}.
+The statistical tests giving the probabilities $ p_{diff} $ and $ p_{fast} $ were done according to \cite{Stark2009, English2017}. Briefly, to test if the cross correlation histogram (CCH) peak was significant we employed two tests. By using the Poisson distribution with a continuity correction \citep{Stark2009} given by \cref{eq:poissoncontcor} we calculated $ p_{diff} $ by comparing the peak in positive time lag with the maximum peak in negative time lag \citep{English2017}. The probability $ p_{fast} $ represents the difference between CCH and it's convolution with a hollow Gaussian kernel \citep{Stark2009}. These two measures of significance were required to be $<0.01$
 \begin{equation}
 p(N|\lambda(m)) = 1 - \sum_{k=0}^{N-1}\frac{e^{-\lambda(m)}\lambda(m)^k}{k!} - \frac{e^{-\lambda(m)}\lambda(m)^N}{2N!}
 \label{eq:poissoncontcor}
@@ -448,12 +462,27 @@ $n$                   &       1.36 &        &        &             \\
 \caption{\label{tab:params} Simulation parameters of three different models.}
 \end{table}
 
+\subsection{Calculating errors}
+\subsubsection{Mean square error}
+The conditional probability of neuron $y$ firing given a spike from neuron $x$ denoted $P(y|x)$ is related to the connection strength $w_{xy}$ and the background activity. Since LIF neurons integrate linearly and have fixed thresholds we expect $P(y|x)$ to be proportional to the connection strength $w_{xy}$, i.e.  $P(y|x) ~ w_{xy}$. To calculate the mean squared errors we thus normalized $w_{xy}$ to the range $[0, max(IV_{xy})]$ or $[0, max(CCH_{xy})]$ for the IV and CCH estimators respectively by
+\begin{equation*}
+    \frac{1}{N}\sum(\hat{w} - \bar{w})^2).
+\end{equation*}
+Here $\bar{w}$ is the normalized weight and $\hat{w}$ is the estimated connection coefficient.
+
+\subsubsection{Goodness of fit}
+The goodness of fit was indicated by the $R^2$ value of a linear regression calculated by ordinary least squares \citep{seabold2010statsmodels} of the relation between estimated values (IV or CCH) with the true weight.
+
+\subsubsection{False positives}
+
+\subsubsection{False negatives}
+
 \subsection{Perturbation intensity}\label{sec:method:opto}
 In order to replicate an optogenetic experiment we modeled transmission of light through brain tissue with the Kubelka-Munk model for diffuse scattering in planar, homogeneous, ideal diffusing media given by
 \begin{align}
-T = \frac{1}{Sz + 1}.
+T = \frac{1}{Sr + 1}.
 \end{align}
-Here $ T $ denotes a transmisison fraction, $ S $ is the scattering coefficient for mice \citep{Aravanis2007} and $ z $ is the distance from a light source \citep{Ho2017}. Further we combined diffusion with geometric loss assuming that absorption is negligible as in \cite{Aravanis2007} and computed the intensity as presented in \cref{fig:concept} by
+Here $ T $ denotes a transmisison fraction, $ S $ is the scattering coefficient for mice \citep{Aravanis2007} and $ r $ is the distance from a light source \citep{Ho2017}. Further we combined diffusion with geometric loss assuming that absorption is negligible as in \cite{Aravanis2007} and computed the intensity as presented in \cref{fig:concept} by
 \begin{align}
 \label{eq:intensity}
 \frac{I(r)}{I(r=0)} = \frac{\rho^2}{(Sr + 1)(r + \rho)^2}
@@ -466,7 +495,7 @@ Here $ d $ is the diameter of the optical fiber, $ NA $ is the numerical apertur
 
 To estimate the distribution of light intensity on affected neurons we assumed a neuron density of $ 10^4 Nmm^{-3} $ and found the volume of a cut cone that could contain the number of stimulated excitatory neurons which were found to yield the depth $ r_{max} = 0.175 mm $. We then selected $ N_stim $ neurons that were given a random position in the range $ [0, r_{max}] $ and were assigned a stimulation strength as the maximum stimulation strength multiplied by \cref{eq:intensity}. Then we selected $ 50 $ of the excitatory neurons that were not stimulated as the ``target" population which together with the inhibitory neurons were not perturbed directly by the light stimulus.
 
-In order to keep the stimulus model as simple as possible we let set the maximum stimulation strength to $ 10 pA $ which was found suitable by investigating the percentage of successful stimulations to be around $ 50\% $.
+In order to keep the stimulus model as simple as possible we let set the maximum stimulation strength to $ 10 pA $ which was found suitable by investigating the percentage of successful stimulations to be almost $ 100\% $.
 
 %-------------------------------------------------------------------------------
 %                                 REFS
