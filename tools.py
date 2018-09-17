@@ -126,7 +126,7 @@ def despine(ax=None, left=False, right=True, top=True, bottom=False,
         left, right, top, bottom = [True] * 4
     if ax is None:
         ax = plt.gca()
-    if not isinstance(ax, list):
+    if not isinstance(ax, (list, tuple)):
         ax = [ax]
     for a in ax:
         try:
@@ -161,14 +161,15 @@ def set_style(style='article', sns_style='white', w=1, h=1):
         },
         'notebook': {
             'figure.figsize' : (16, 9),
-            'axes.labelsize' : 25,
-            'lines.linewidth': 2,
-            'xtick.labelsize': 25,
-            'ytick.labelsize': 25,
+            'axes.labelsize' : 50,
+            'lines.linewidth': 4,
+            'lines.markersize': 20,
+            'xtick.labelsize': 30,
+            'ytick.labelsize': 30,
             'axes.titlesize' : 20,
             'font.size'      : 20,
             'legend.frameon' : False,
-            'legend.fontsize': 20,
+            'legend.fontsize': 35,
             'font.family'    : 'serif',
             'text.usetex'    : True
         }
@@ -177,3 +178,14 @@ def set_style(style='article', sns_style='white', w=1, h=1):
     plt.rcParams.update(rc)
     sns.set(rc=rc, style=sns_style,
             color_codes=True)
+
+
+def add_caption(axs, start='a', hspace=1, **kw):
+    import string
+    alph = string.ascii_lowercase
+    alph = alph[alph.index(start.lower()):]
+    for ax, capt in zip(axs, alph):
+        label = ax.get_xlabel()
+        ax.set_xlabel(
+            r'\begin{center}{}\\[{}ex]({})\end{center}'.format(label, hspace, capt),
+            **kw)
