@@ -1,5 +1,80 @@
 import quantities as pq
 import numpy as np
+import neo
+
+
+def coef_var(spike_trains):
+    """
+    Calculate the coefficient of variation in inter spike interval (ISI)
+    distribution over several spike_trains
+
+    Parameters
+    ----------
+    spike_trains : list
+        contains spike trains where each spike train is an array of spike times
+
+    Returns
+    -------
+    out : list
+        Coefficient of variations for each spike_train, nan if len(spike_train) == 0
+
+    Examples
+    --------
+    >>> np.random.seed(12345)
+    >>> spike_trains = [np.arange(10), np.random.random((10))]
+    >>> print('{d[0]:.2f}, {d[1]:.2f}'.format(d=coeff_var(spike_trains)))
+    0.00, -9.53
+
+    """
+    cvs = []
+    for spike_train in spike_trains:
+        isi = np.diff(spike_train)
+        if len(isi) > 0:
+            cvs.append(np.std(isi) / np.mean(isi))
+        else:
+            cvs.append(np.nan)
+    return cvs
+
+
+def corrcoef(spike_trains, t_stop, binsize=10.):
+    """
+    Calculate the pairwise Pearson correlation coefficients
+
+    Parameters
+    ----------
+    spike_trains : list
+        contains spike trains where each spike train is an array of spike times
+    t_stop : float
+        stop time of spike trains
+    binsize : float
+        binsize for histograms to be correlated
+
+
+    Returns
+    -------
+    out : array
+        Pearson correlation coefficients
+    """
+    N = len(spike_trains)
+    cmat = [corr_spikes(m1, m2, t_stop, binsize)
+            for m1 in spike_trains for m2 in spike_trains]
+    return np.array(cmat).reshape((N, N))
+
+
+def corr_spikes(s1, s2, t_stop, binsize):
+    bins = np.arange(0, t_stop + binsize, binsize)
+    mat = [np.histogram(t, bins=bins)[0] for t in [s1, s2]]
+    return corr(*mat)
+
+
+def corr(a, b):
+    mat = [(m - m.mean()) / m.std() for m in [a, b]]
+    return cov(*mat)
+
+
+def cov(a, b):
+    return np.mean((a - a.mean())*(b - b.mean()))
+
 
 def poisson_continuity_correction(n, observed):
     """
@@ -258,3 +333,70 @@ def correlogram(t1, t2=None, binsize=.001, limit=.02, auto=False,
         count = count[::-1]
 
     return count, bins[1:]
+
+
+def make_spiketrain_trials(spike_train, epoch, t_start=None, t_stop=None):
+    '''
+    Makes trials based on an Epoch and given temporal bound
+
+    Parameters
+    ----------
+    spike_train : neo.SpikeTrain, neo.Unit, numpy.array, quantities.Quantity
+    epoch : neo.Epoch
+    t_start : quantities.Quantity
+        time before epochs, default is 0 s
+    t_stop : quantities.Quantity
+        time after epochs default is duration of epoch
+
+    Returns
+    -------
+    out : list of neo.SpikeTrains
+    '''
+    from neo.core import SpikeTrain
+    if t_start is None:
+        t_start = 0 * pq.s
+    if t_start.ndim == 0:
+        t_starts = t_start * np.ones(len(epoch.times))
+    else:
+        t_starts = t_start
+        assert len(epoch.times) == len(t_starts), 'epoch.times and t_starts have different size'
+    if t_stop is None:
+        t_stop = epoch.durations
+    if t_stop.ndim == 0:
+        t_stops = t_stop * np.ones(len(epoch.times))
+    else:
+        t_stops = t_stop
+        assert len(epoch.times) == len(t_stops), 'epoch.times and t_stops have different size'
+
+    dim = 's'
+
+    if isinstance(spike_train, neo.Unit):
+        sptr = []
+        for st in unit.spiketrains:
+            sptr.append(spike_train.rescale(dim).magnitude)
+        sptr = np.sort(sptr) * pq.s
+    elif isinstance(spike_train, neo.SpikeTrain):
+        sptr = spike_train.times.rescale(dim)
+    elif isinstance(spike_train, pq.Quantity):
+        assert is_quantities(spike_train, 'vector')
+        sptr = spike_train.rescale(dim)
+    elif isinstance(spike_train, np.array):
+        sptr = spike_train * pq.s
+    else:
+        raise TypeError('Expected (neo.Unit, neo.SpikeTrain, ' +
+                        'quantities.Quantity, numpy.array), got "' +
+                        str(type(spike_train)) + '"')
+    if not isinstance(epoch, neo.Epoch):
+        raise TypeError('Expected "neo.Epoch" got "' + str(type(epoch)) + '"')
+
+    trials = []
+    for j, t in enumerate(epoch.times.rescale(dim)):
+        t_start = t_starts[j].rescale(dim)
+        t_stop = t_stops[j].rescale(dim)
+        spikes = []
+        for spike in sptr[(t+t_start < sptr) & (sptr < t+t_stop)]:
+            spikes.append(spike-t)
+        trials.append(SpikeTrain(times=spikes * pq.s,
+                                 t_start=t_start,
+                                 t_stop=t_stop))
+    return trials
