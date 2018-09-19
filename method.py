@@ -2,8 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
 from sklearn.linear_model import LogisticRegression
-from cross_correlation import (correlogram, poisson_continuity_correction,
-                               cch_convolve)
+from tools_analysis import (correlogram, poisson_continuity_correction,
+                            cch_convolve)
 import seaborn as sns
 
 

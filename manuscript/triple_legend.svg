@@ -26,7 +26,7 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="2.8"
-     inkscape:cx="92.769455"
+     inkscape:cx="33.662312"
      inkscape:cy="12.271948"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
@@ -48,7 +48,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -207,16 +207,143 @@
          id="tspan852"
          x="32.812756"
          y="397.75208"
-         style="stroke-width:0.9375px"></tspan><tspan
+         style="stroke-width:0.9375px" /><tspan
          sodipodi:role="line"
          x="32.812756"
          y="413.86536"
          style="stroke-width:0.9375px"
-         id="tspan856"></tspan><tspan
+         id="tspan856" /><tspan
          sodipodi:role="line"
          x="32.812756"
          y="429.97864"
          style="stroke-width:0.9375px"
          id="tspan858">Ground truth</tspan></text>
+    <g
+       transform="matrix(0.93697385,0,0,1.25,41.378427,382.3678)"
+       id="line2d_11-3"
+       style="stroke-linecap:butt;stroke-linejoin:round">
+      <path
+         d="m 58.320064,84.708211 h 22"
+         style="fill:none;stroke:#55a868;stroke-width:2.0002141;stroke-linecap:square;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none"
+         id="path206-6"
+         inkscape:connector-curvature="0" />
+    </g>
+    <g
+       transform="matrix(1.25,0,0,1.25,22.175628,376.66957)"
+       id="line2d_13-7"
+       style="stroke-linecap:butt;stroke-linejoin:round">
+      <path
+         sodipodi:nodetypes="ccc"
+         d="m 58.320064,100.03911 17.310021,-0.04512 0.695516,-0.0022"
+         style="fill:none;stroke:#55a868;stroke-width:2;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:7.4, 3.2;stroke-dashoffset:0"
+         id="path227-5"
+         inkscape:connector-curvature="0" />
+    </g>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:12px;line-height:0%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="96.453735"
+       y="474.35864"
+       id="text5151-3"><tspan
+         sodipodi:role="line"
+         id="tspan5153-5"
+         x="96.453735"
+         y="474.35864"
+         style="font-style:italic;font-variant:normal;font-weight:500;font-stretch:normal;font-size:12.50000095px;line-height:1.25;font-family:'CMU Serif';-inkscape-font-specification:'CMU Serif Medium Italic';stroke-width:1px;stroke-linecap:butt;stroke-linejoin:round">BC</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:12px;line-height:0%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="126.81915"
+       y="474.35864"
+       id="text5151-7-6"><tspan
+         sodipodi:role="line"
+         id="tspan5153-2-2"
+         x="126.81915"
+         y="474.35864"
+         style="font-style:italic;font-variant:normal;font-weight:500;font-stretch:normal;font-size:12.50000095px;line-height:1.25;font-family:'CMU serif';-inkscape-font-specification:'CMU serif Medium Italic';stroke-width:1px;stroke-linecap:butt;stroke-linejoin:round">AC</tspan></text>
+    <g
+       transform="matrix(0.93697385,0,0,1.25,65.958484,462.06556)"
+       id="line2d_11-6-9"
+       style="stroke-linecap:butt;stroke-linejoin:round">
+      <path
+         d="m 64.54574,20.95 h 22"
+         style="fill:none;stroke:#4c72b0;stroke-width:2.0002141;stroke-linecap:square;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none"
+         id="path131-1"
+         inkscape:connector-curvature="0" />
+    </g>
+    <g
+       transform="matrix(1.25,0,0,1.25,44.767028,456.31557)"
+       id="line2d_13-1-2"
+       style="stroke-linecap:butt;stroke-linejoin:round">
+      <path
+         sodipodi:nodetypes="cc"
+         d="m 64.54574,36.280895 18.069875,0.03551"
+         style="fill:none;stroke:#4c72b0;stroke-width:2;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:7.4, 3.2;stroke-dashoffset:0"
+         id="path152-7"
+         inkscape:connector-curvature="0" />
+    </g>
+    <g
+       transform="matrix(0.97826654,0,0,1.25,62.839009,451.00461)"
+       id="line2d_15-0"
+       style="stroke-linecap:butt;stroke-linejoin:round">
+      <path
+         d="m 64.54574,51.611789 h 22"
+         style="fill:none;stroke:#1a1a1a;stroke-width:1.95754433;stroke-linecap:square;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none"
+         id="path172-9"
+         inkscape:connector-curvature="0" />
+    </g>
+    <g
+       transform="matrix(0.97826654,0,0,1.25,32.425647,451.00461)"
+       id="line2d_15-4-3"
+       style="stroke-linecap:butt;stroke-linejoin:round">
+      <path
+         d="m 64.54574,51.611789 h 22"
+         style="fill:none;stroke:#1a1a1a;stroke-width:1.95754433;stroke-linecap:square;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none"
+         id="path172-0-6"
+         inkscape:connector-curvature="0" />
+    </g>
+    <text
+       id="text841-0"
+       y="490.78021"
+       x="9.9880877"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12.890625px;line-height:125%;font-family:'CMU Serif';-inkscape-font-specification:'CMU Serif';letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.9375px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       xml:space="preserve"><tspan
+         style="stroke-width:0.9375px;stroke-linecap:butt;stroke-linejoin:round"
+         y="490.78021"
+         x="9.9880877"
+         id="tspan839-6"
+         sodipodi:role="line">IV</tspan></text>
+    <text
+       id="text845-2"
+       y="504.21603"
+       x="9.6271486"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12.890625px;line-height:125%;font-family:'CMU Serif';-inkscape-font-specification:'CMU Serif';letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.9375px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       xml:space="preserve"><tspan
+         style="stroke-width:0.9375px;stroke-linecap:butt;stroke-linejoin:round"
+         y="504.21603"
+         x="9.6271486"
+         id="tspan843-6"
+         sodipodi:role="line">CCH</tspan></text>
+    <text
+       id="text854-1"
+       y="473.89612"
+       x="9.6271486"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12.890625px;line-height:125%;font-family:'CMU Serif';-inkscape-font-specification:'CMU Serif';letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.9375px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       xml:space="preserve"><tspan
+         style="stroke-width:0.9375px;stroke-linecap:butt;stroke-linejoin:round"
+         y="485.81995"
+         x="9.6271486"
+         id="tspan852-8"
+         sodipodi:role="line" /><tspan
+         id="tspan856-7"
+         style="stroke-width:0.9375px;stroke-linecap:butt;stroke-linejoin:round"
+         y="501.93323"
+         x="9.6271486"
+         sodipodi:role="line" /><tspan
+         id="tspan858-9"
+         style="stroke-width:0.9375px;stroke-linecap:butt;stroke-linejoin:round"
+         y="518.04651"
+         x="9.6271486"
+         sodipodi:role="line">Ground truth</tspan></text>
   </g>
 </svg>

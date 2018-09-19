@@ -104,7 +104,7 @@ def set_style(style='article', sns_style='white', w=1, h=1):
             color_codes=True)
 
 
-def add_caption(axs, start='a', vspace=1, **kw):
+def add_caption(ax, start='a', vspace=1, **kw):
     '''
     Adds a caption e.g. (a) underneath the xlabel.
 
@@ -121,21 +121,46 @@ def add_caption(axs, start='a', vspace=1, **kw):
     import string
     alph = string.ascii_lowercase
     alph = alph[alph.index(start.lower()):]
-    for ax, capt in zip(axs, alph):
-        label = ax.get_xlabel()
-        ax.set_xlabel(
-            r'\begin{center}{}\\[{}ex]({})\end{center}'.format(label, vspace, capt),
-            **kw)
+    ax = ax if isinstance(ax, (list, tuple)) else [ax]
+    for a, capt in zip(ax, alph):
+        label = a.get_xlabel()
+        if label == '':
+            a.set_xlabel(r'({})'.format(capt), **kw)
+        else:
+            a.set_xlabel(
+                r'\begin{{center}}{}\\[{}ex]({})\end{{center}}'.format(label, vspace, capt),
+                **kw)
+
+def label_diff(x1, x2, y, text, ax, color='k', pad_txt=.03, pad_line=0.01):
+    '''
+    Make line connected to x1 and x2 with text on top
+
+    Parameters
+    ----------
+    x1 : float
+        Postion one
+    x2 : float
+        Postion two
+    y : float
+        Hight
+    text : str
+        Text on top of line
+    '''
+    h = y * pad_line
+    ax.plot([x1, x1, x2, x2], [y, y + h, y + h, y], lw=1.5, color=color)
+    ax.text((x1 + x2) * .5, y + y * pad_txt, text, ha='center', va='bottom',
+            color=color)
 
 
 def plot_psth(spike_train=None, epoch=None, trials=None, xlim=[None, None],
               fig=None, axs=None, legend_loc=1, color='b',
               title='', stim_alpha=.2, stim_color=None,
               stim_label='Stim on', stim_style='patch', stim_offset=0*pq.s,
-              rast_ylabel='Trials', rast_size=10.,
-              hist_color=None, hist_edgecolor=None, hist_ylim=None,
-              hist_ylabel=None, hist_output='counts', hist_binsize=None,
-              hist_nbins=100, hist_alpha=1.):
+              rast_ylabel='Trials', rast_size=10,
+              hist_color=None, hist_edgecolor=None,
+              hist_ylim=None,  hist_ylabel=None,
+              hist_output='counts', hist_binsize=None, hist_nbins=100,
+              hist_alpha=1.):
     """
     Visualize clustering on amplitude at detection point
 
@@ -158,7 +183,6 @@ def plot_psth(spike_train=None, epoch=None, trials=None, xlim=[None, None],
     stim_offset : pq.Quantity
         The amount of offset for the stimulus relative to epoch.
     rast_ylabel : str
-    rast_size : float
     hist_color : str
     hist_edgecolor : str
     hist_ylim : list
@@ -221,7 +245,7 @@ def plot_psth(spike_train=None, epoch=None, trials=None, xlim=[None, None],
         fill_stop = 0
         import matplotlib.lines as mlines
         line = mlines.Line2D([], [], color=stim_color, label=stim_label)
-    stim_offset = stim_offset.rescale('s').magnitude
+    stim_offset = stim_offset.rescale(dim).magnitude
     hist_ax.axvspan(stim_offset, fill_stop + stim_offset, color=stim_color,
                     alpha=stim_alpha, zorder=0)
     rast_ax.axvspan(stim_offset, fill_stop + stim_offset, color=stim_color,
@@ -239,7 +263,7 @@ def plot_spike_histogram(trials, color='b', ax=None, binsize=None, bins=None,
                          output='counts', edgecolor=None, alpha=1., ylabel=None,
                          nbins=None):
     """
-    Histogram plot of trials
+    histogram plot of trials
 
     Parameters
     ----------
@@ -325,7 +349,7 @@ def plot_spike_histogram(trials, color='b', ax=None, binsize=None, bins=None,
     else:
         raise TypeError('ylabel must be str not "' + str(type(ylabel)) + '"')
     ax.bar(bs[:len(time_hist)], time_hist.magnitude.flatten(), width=bs[1]-bs[0],
-           edgecolor=edgecolor, facecolor=color, alpha=alpha)
+           edgecolor=edgecolor, facecolor=color, alpha=alpha, align='edge')
     return ax
 
 
@@ -378,3 +402,159 @@ def plot_raster(trials, color="#3498db", lw=1, ax=None, marker='.', marker_size=
     if ylabel is not None:
         ax.set_ylabel(ylabel)
     return ax
+
+
+def plot_xcorr(spike_trains, colors=None, edgecolors=None, fig=None,
+               density=True, alpha=1., gs=None, binsize=1*pq.ms,
+               time_limit=1*pq.s, split_colors=True, xcolor='k',
+               xedgecolor='k', xticksvisible=True, yticksvisible=True,
+               acorr=True, ylim=None, names=None):
+    """
+    Bar plot of crosscorrelation of multiple spiketrians
+
+    Parameters
+    ----------
+    spike_trains : list of neo.SpikeTrain or neo.SpikeTrain
+    colors : list or str
+        colors of histogram
+    edgecolors : list or str
+        edgecolor of histogram
+    ax : matplotlib axes
+    alpha : float
+        opacity
+    binsize : Quantity
+        binsize of spike rate histogram, default 2 ms
+    time_limit : Quantity
+        end time of histogram x limit, default 100 ms
+    gs : instance of matplotlib.gridspec
+    split_colors : bool
+        if True splits crosscorrelations into colors from respective
+        autocorrelations
+    xcolor : str
+        color of crosscorrelations
+    xedgecolor : str
+        edgecolor of crosscorrelations
+    xticksvisible : bool
+        show xtics on crosscorrelations, (True by default)
+    yticksvisible : bool
+        show ytics on crosscorrelations, (True by default)
+    acorr : bool
+        show autocorrelations, (True by default)
+
+    Examples
+    --------
+    >>> import neo
+    >>> from numpy.random import rand
+    >>> sptr1 = neo.SpikeTrain(rand(100) * 2, t_stop=2, units='s')
+    >>> sptr2 = neo.SpikeTrain(rand(100) * 2, t_stop=2, units='s')
+    >>> sptr3 = neo.SpikeTrain(rand(100) * 2, t_stop=2, units='s')
+    >>> fig = plot_xcorr([sptr1, sptr2, sptr3])
+
+    .. plot::
+
+        import matplotlib.pyplot as plt
+        import numpy as np
+        import quantities as pq
+        import neo
+        from numpy.random import rand
+        from exana.statistics import plot_xcorr
+        sptr1 = neo.SpikeTrain(rand(100) * 2, t_stop=2, units='s')
+        sptr2 = neo.SpikeTrain(rand(100) * 2, t_stop=2, units='s')
+        sptr3 = neo.SpikeTrain(rand(100) * 2, t_stop=2, units='s')
+        plot_xcorr([sptr1, sptr2, sptr3])
+        plt.show()
+
+    Returns
+    -------
+    out : fig
+    """
+    if len(spike_trains) == 1:
+        spike_trains = [spike_trains]
+    from tools_analysis import correlogram
+    import matplotlib.gridspec as gridspec
+    if colors is None:
+        from matplotlib.pyplot import cm
+        colors = cm.rainbow(np.linspace(0, 1, len(spike_trains)))
+    elif not isinstance(colors, list):
+        colors = [colors] * len(spike_trains)
+    if edgecolors is None:
+        edgecolors = colors
+    elif not isinstance(edgecolors, list):
+        edgecolors = [edgecolors] * len(spike_trains)
+
+    def get_name(sptr, idx):
+        if hasattr(sptr, 'name'):
+            name = sptr.name
+        elif names is not None:
+            assert len(names) == len(spike_trains)
+            name = names[idx]
+        else:
+            name = 'idx {}'.format(idx)
+        return name
+    if fig is None:
+        fig = plt.figure()
+
+    nrc = len(spike_trains)
+    if gs is None:
+        gs0 = gridspec.GridSpec(nrc, nrc)
+    else:
+        gs0 = gridspec.GridSpecFromSubplotSpec(nrc, nrc, subplot_spec=gs)
+    axs, cnt = [], 0
+    for x in range(nrc):
+        for y in range(nrc):
+            if (y > x) or (y == x):
+                if not acorr and y == x:
+                    continue
+                prev_ax = None if len(axs) == 0 else axs[cnt-1]
+                ax = fig.add_subplot(gs0[x, y], sharex=prev_ax, sharey=prev_ax)
+                axs.append(ax)
+            if y > x:
+                plt.setp(ax.get_xticklabels(), visible=xticksvisible)
+                plt.setp(ax.get_yticklabels(), visible=yticksvisible)
+    cnt = 0
+    ccgs = []
+    for x in range(nrc):
+        for y in range(nrc):
+            if y > x:
+                sptr1 = spike_trains[x]
+                sptr2 = spike_trains[y]
+
+                count, bins = correlogram(
+                    t1=sptr1,
+                    t2=sptr2,
+                    binsize=binsize, limit=time_limit,  auto=False,
+                    density=density)
+                ccgs.append(count)
+                if split_colors:
+                    c1, c2 = colors[x], colors[y]
+                    e1, e2 = edgecolors[x], edgecolors[y]
+                    c1_n = sum(bins <= 0)
+                    c2_n = len(bins) - c1_n
+                    cs = [c1] * c1_n + [c2] * c2_n
+                    es = [e1] * c1_n + [e2] * c2_n
+                else:
+                    cs, es = xcolor, xedgecolor
+                axs[cnt].bar(bins, count, align='edge',
+                             width=-binsize, color=cs,
+                             edgecolor=es)
+                axs[cnt].set_xlim([-time_limit, time_limit])
+                name1 = get_name(sptr1, x)
+                name2 = get_name(sptr2, y)
+                axs[cnt].set_xlabel(name1 + ' ' + name2)
+                cnt += 1
+            elif y == x and acorr:
+                sptr = spike_trains[x]
+                count, bins = correlogram(
+                    t1=sptr, t2=None,
+                    binsize=binsize, limit=time_limit,
+                    auto=True, density=density)
+                ccgs.append(count)
+                axs[cnt].bar(bins, count, width=-binsize, align='edge',
+                             color=colors[x], edgecolor=edgecolors[x])
+                axs[cnt].set_xlim([-time_limit, time_limit])
+                name = get_name(sptr, x)
+                axs[cnt].set_xlabel(name + ' ' + name)
+                cnt += 1
+    if ylim is not None: axs[0].set_ylim(ylim)
+    plt.tight_layout()
+    return ccgs, bins
