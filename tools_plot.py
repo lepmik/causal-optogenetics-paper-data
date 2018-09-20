@@ -131,6 +131,7 @@ def add_caption(ax, start='a', vspace=1, **kw):
                 r'\begin{{center}}{}\\[{}ex]({})\end{{center}}'.format(label, vspace, capt),
                 **kw)
 
+
 def label_diff(x1, x2, y, text, ax, color='k', pad_txt=.03, pad_line=0.01):
     '''
     Make line connected to x1 and x2 with text on top

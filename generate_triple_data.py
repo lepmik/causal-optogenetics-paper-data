@@ -1,16 +1,7 @@
-from tools import fix_figure, savefig, despine, set_style
 import nest
-import matplotlib.pyplot as plt
-from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
 import pandas as pd
 import numpy as np
-import quantities as pq
-import seaborn as sns
 
-from exana.statistics.tools import ccg_significance
-from exana.statistics.plot import plot_xcorr
-from exana.stimulus.plot import plot_psth
-# from exana.statistics import plot_xcorr
 import copy
 
 par = {
