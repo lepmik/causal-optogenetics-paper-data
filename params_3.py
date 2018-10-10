@@ -36,16 +36,21 @@ parameters = {
     'stim_N_ex'       : 800,
     'stim_N_in'       : 0,
     'stim_dist'       : 'poisson',
-    'stim_amp_ex'     : 10.0, # pA
+    'stim_amp_ex'     : 7.0, # pA
     'stim_amp_in'     : 0.0, # pA
     'stim_period'     : 100.0, # ms
     'stim_max_period' : 150, # only applies to poisson
     'stim_duration'   : 2.0, # ms
     'stim_N'          : 30000,
     # Optogenetics
+    'I0': 10, # light intensity leaving fibre mW/mm2
     'r': 100e-3, # 100 um radius of fiber
     'n': 1.36, # refraction index of gray matter
     'NA': 0.37, # Numerical Aperture of fiber
     'S': 10.3, # mm^-1 scattering index for rat, mouse = 11.2
-    'density': 10e4, # N/mm³
+    'N_pos': 10,
+    'depth': .4,
+    'Imax': 642, # max current pA
+    'K': 0.84, # half-maximal light sensitivity of the ChR2 mW/mm2
+    'n': 0.76, # Hill coefficient
 }
