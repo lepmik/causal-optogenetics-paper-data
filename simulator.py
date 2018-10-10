@@ -1,4 +1,5 @@
 import numpy as np
+from method import IV
 import nest
 import pandas as pd
 import quantities as pq
@@ -19,6 +20,7 @@ try:
     HAS_MPI = True
 except ImportError:
     HAS_MPI = False
+
 
 nest.set_verbosity(100)
 
@@ -120,7 +122,7 @@ class Simulator:
         nest.SetKernelStatus({"overwrite_files": True,
                               "data_path": self.p['data_path'],
                               "data_prefix": "",
-                              "print_time": self.p['verbose'],
+                              "print_time": False,
                               "local_num_threads": num_threads})
         msd = self.p['msd']
         # numpy seed
@@ -264,7 +266,6 @@ class Simulator:
 
     def simulate_trials(self, progress_bar=False):
         progress_bar = progress_bar and PBAR
-        amps = [self.p['stim_amp_ex'], self.p['stim_amp_in']]
 
         def intensity(z):
             rho = self.p['r'] * np.sqrt((self.p['n'] / self.p['NA'])**2 - 1)
@@ -277,39 +278,47 @@ class Simulator:
             A = np.pi * rad**2
             dz = z[1] - z[0]
             dV = A * dz
-            N = dV * self.p['density']
-            return np.array([np.sum(N[:i+1]) for i in range(len(N))])
-        if any(a > 0 for a in amps):
-            z = np.arange(0,1.01,.01)
-            neurons = affected_neurons(z)
-            mask = neurons <= self.p['stim_N_ex'] + self.p['stim_N_in']
-            z_N = z[mask][-1]
+            density = self.p['stim_N_ex'] / sum(dV)
+            self.p['density'] = density
+            N = dV * density
+            return N
+
+        def hill(I):
+            In = I**self.p['n']
+            return self.p['Imax'] * In / (self.p['K']**self.p['n'] + In) # peak amplitude of the current response
+
         # Simulate one period without stimulation
         nest.Simulate(self.stim_times[0])
 
+
+        self.stim_nodes_ex = self.nodes_ex[:self.p['stim_N_ex']]
+        self.stim_nodes_in = self.nodes_in[:self.p['stim_N_in']]
+
+        assert all(np.in1d(self.stim_nodes_ex, self.nodes_ex))
+        assert all(np.in1d(self.stim_nodes_in, self.nodes_in))
         # Set dc stimulation
-        stims = []
-
-        if 'stim_nodes_ex' not in self.p:
-            self.p['stim_nodes_ex'] = self.nodes_ex[:self.p['stim_N_ex']]
-        if 'stim_nodes_in' not in self.p:
-            self.p['stim_nodes_in'] = self.nodes_ex[:self.p['stim_N_in']]
-
-        assert all(np.in1d(self.p['stim_nodes_ex'], self.nodes_ex))
-        assert all(np.in1d(self.p['stim_nodes_in'], self.nodes_in))
-        stim_nodes = [self.p['stim_nodes_ex'], self.p['stim_nodes_in']]
         self.stim_amps = {'ex': [], 'in': []}
-        for a, nodes, pop in zip(amps, stim_nodes, ['ex', 'in']):
-            for n in nodes:
-                amp = a if a == 0 else intensity(np.random.uniform(0, z_N)) * a
-                self.stim_amps[pop].append({'node': n, 'amp': amp})
-                stim = nest.Create(
-                    "dc_generator",
-                    params={'amplitude': amp,
-                            'start': 0.,
-                            'stop': self.p['stim_duration']})
-                nest.Connect(stim, tuple([n]))
-                stims.append(stim)
+        stims = []
+        z = np.linspace(0, self.p['depth'], self.p['N_pos'])
+        N_slice = affected_neurons(z).astype(int)
+
+        I = intensity(z)
+        A = hill(self.p['I0'] * I)
+        A = A / A.max()
+        idx = 0
+        for i, N_stim in enumerate(N_slice):
+            nodes = self.stim_nodes_ex[idx:idx + N_stim]
+            idx += N_stim
+            amp = A[i] * self.p['stim_amp_ex']
+            stim_amps = [{'node': n, 'amp': amp} for n in nodes]
+            self.stim_amps['ex'].extend(stim_amps)
+            stim = nest.Create(
+                "dc_generator",
+                params={'amplitude': amp,
+                        'start': 0.,
+                        'stop': self.p['stim_duration']})
+            nest.Connect(stim, nodes)
+            stims.append(stim)
 
         # Run multiple trials
         simtimes = np.concatenate((np.diff(self.stim_times),
@@ -366,25 +375,17 @@ class Simulator:
         status = {k:v for k,v in status.items() if k in include}
         self.p['status'] = status
         data = {}
-        if not hasattrs(self, 'spikes_ex', 'spikes_in', 'vm_ex', 'vm_in'):
-            return data
         if hasattrs(self, 'spikes_ex', 'spikes_in'):
-            exc = nest.GetStatus(self.spikes_ex, 'events')[0]
-            inh = nest.GetStatus(self.spikes_in, 'events')[0]
-            for a, t in zip([exc, inh], ['exc', 'inh']):
-                if len(a['times']) == 0:
-                    self.vprint('Warning: no spikes in {} recorded.'.format(t))
             spiketrains = {}
             for spks, tag in zip([self.spikes_ex, self.spikes_in], ['ex', 'in']):
                 spk_status = nest.GetStatus(spks, 'events')[0]
-                df = pd.DataFrame(spk_status)
                 nsenders = len(set(spk_status['senders']))
                 nspikes = len(spk_status['times'])
+                if nspikes == 0:
+                    self.vprint('Warning: no spikes in {} recorded.'.format(tag))
                 rate = 0 if not nsenders else nspikes / (status['time'] / 1000.0) / nsenders
                 self.p['rate_'+tag] = rate
-                spiketrains[tag] = [{'times': np.array(attr['times']),
-                                     'sender': sndr}
-                                    for sndr, attr in df.groupby('senders')]
+                spiketrains[tag] = spk_status
             data['spiketrains'] = spiketrains
         if hasattrs(self, 'vm_ex', 'vm_in'):
             exc   = nest.GetStatus(self.vm_ex, "events")[0]
@@ -400,8 +401,8 @@ class Simulator:
                 'times': self.stim_times,
                 'durations': [self.p['stim_duration']] * self.p['stim_N']},
             'stim_nodes': {
-                'ex': self.p['stim_nodes_ex'],
-                'in': self.p['stim_nodes_in']},
+                'ex': self.stim_nodes_ex,
+                'in': self.stim_nodes_in},
             'stim_amps': {
                 'ex': pd.DataFrame(self.stim_amps['ex']),
                 'in': pd.DataFrame(self.stim_amps['in'])},
@@ -415,14 +416,15 @@ class Simulator:
     @property
     def data(self):
         if not hasattr(self, '_data'):
-            data = self.generate_data_dict()
-            if 'state' not in data and 'spiketrains' not in data:
-                self.vprint('Cannot find any saved data, loading from file...')
+            if not hasattr(self, 'nodes'):
+                self.vprint('Cannot find data in memory, loading from file...')
                 fnameout = os.path.join(self.p['data_path'], self.p['fname'] + '.npz')
                 data = np.load(fnameout)['data'][()]
                 if not self.p == data['params']:
                     self.vprint('WARNING: Data parameters and self parameters are ' +
                           'not equal. Use "data["params"]"')
+            else:
+                data = self.generate_data_dict()
             self._data = data
         return self._data
 
@@ -481,6 +483,32 @@ if __name__ == '__main__':
     f, p, d = imp.find_module(jobname, [currdir])
     parameters = imp.load_module(jobname, f, p, d).parameters
 
-    sim = Simulator(parameters, mpi=False, data_path='results',
-                    fname=jobname)
-    sim.simulate(save=True, progress_bar=True)
+    sim = Simulator(parameters, mpi=False, data_path='results', fname=jobname)
+    # sim.simulate(save=True, progress_bar=True, state=False)
+
+    senders = sim.data['spiketrains']['ex']['senders']
+    times = sim.data['spiketrains']['ex']['times']
+    stim_times = sim.data['epoch']['times']
+    sender_ids = np.unique(senders)
+
+    spiketrains = {sender: times[sender==senders]
+                   for sender in sender_ids}
+    winsize_iv = 4
+    latency_iv = 4 # not used
+    hit_rates = [IV(s1, [], stim_times,  winsize=winsize_iv, latency=latency_iv).hit_rate
+                 for s1 in spiketrains.values()]
+
+
+    fig, ax = plt.subplots(1, 2)
+    width = 1
+    bins = np.arange(0, 11, width)
+    hist, bins = np.histogram(sim.data['stim_amps']['ex'].amp, bins=bins)
+    print(bins)
+    print(hist, sum(hist))
+    ax[0].bar(bins[1:], hist, align='edge', width=-width)
+
+    width = .1
+    bins = np.arange(0, 1+width, width)
+    hist, bins = np.histogram(hit_rates, bins=bins)
+    plt.bar(bins[1:], hist, align='edge', width=-width)
+    fig.savefig(sim.p['fname'] + '_stim_distribution.png')
