@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import quantities as pq
-from tools_analysis import make_spiketrain_trials
+#from tools_analysis import make_spiketrain_trials
 import neo
 import os.path as op
 
