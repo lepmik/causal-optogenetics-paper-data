@@ -88,10 +88,10 @@ def set_style(style='article', sns_style='white', w=1, h=1):
             'axes.labelsize' : 50,
             'lines.linewidth': 4,
             'lines.markersize': 20,
-            'xtick.labelsize': 30,
-            'ytick.labelsize': 30,
+            'xtick.labelsize': 40,
+            'ytick.labelsize': 50,
             'axes.titlesize' : 20,
-            'font.size'      : 20,
+            'font.size'      : 50,
             'legend.frameon' : False,
             'legend.fontsize': 35,
             'font.family'    : 'serif',
@@ -558,4 +558,4 @@ def plot_xcorr(spike_trains, colors=None, edgecolors=None, fig=None,
                 cnt += 1
     if ylim is not None: axs[0].set_ylim(ylim)
     plt.tight_layout()
-    return ccgs, bins
+    return ccgs, bins, axs

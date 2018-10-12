@@ -24,7 +24,7 @@ def test_create_neo_structure(tmpdir):
     res2_ts = [90, 900, 9000, 90000]
     f_res2.writelines([str(t) + '\n' for t in res2_ts])
     
-    
+
 def test_get_first_spikes():
     from tools_experimentaldata import get_first_spikes
     

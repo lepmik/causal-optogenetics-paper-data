@@ -868,7 +868,6 @@ def select_times_from_epoch(epoch, conditions):
             lengths.append(len(epoch_out.__dict__[key]))
 
     assert all(x == lengths[0] for x in lengths)
-
     return epoch_out
 
 
@@ -1006,7 +1005,6 @@ def determine_if_spktr_is_tagged(spktr,
                                  delta_t_before=2*pq.s,
                                  p_sign=10e-10,
                                  direction='exc'):
-    
     '''
     Determine whether a spiketrain is tagged by optostimulation.
 
@@ -1089,7 +1087,6 @@ def determine_if_spktr_is_tagged(spktr,
         cond2 = True
     elif direction == 'inh' and np.mean(n_spks_stim) < 0.5*np.mean(n_spks_bfr):
         cond2 = True
-        
     if cond1 and cond2:
         return True
     else:
@@ -1191,7 +1188,6 @@ def plot_ccgs_between_stim_pre_and_post(spktr_stim,
         ax[1].set_ylim(ylim)
         ax[2].set_ylim(ylim)
     return fig, ax
-
 
 def regplot(x, y, data, model, ci=95.,
             scatter_color='b', model_color='k', ax=None,
@@ -1839,7 +1835,6 @@ def find_significant_stimulations(blks,
         epc = seg.epochs[0]
         units = blk.channel_indexes[0].children
         stim_shanks = np.unique(epc.annotations['shank'])
-
         for shank in stim_shanks:
             shank_bool = epc.annotations['shank'] == shank
             stim_groups = np.unique(epc.annotations['stim_group'][shank_bool])
@@ -1886,7 +1881,6 @@ def find_significant_stimulations(blks,
                             bins_sig = bins_sig[bins_sig > 0]
                             if len(bins_sig) > 0:
                                 first_bin_sig = np.min(bins_sig)
-
                         df_cch = df_cch.append({
                             'animal': blk.annotations['animal'],
                             'date': blk.annotations['date'],
