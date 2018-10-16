@@ -7,7 +7,7 @@ import copy
 par = {
     'msd'            : 1234, # Master seed
     'num_threads'    : 4,
-    'N_neurons'      : 3,
+    'N_neurons'      : 2,
     'res'            : 0.1, # Temporal resolution for simulation Delta t in ms
     'delay'          : 1.5, # Synaptic delay in ms
     'rate_p'         : 1000., # external poisson rate in Hz
@@ -31,7 +31,7 @@ par = {
     'J_BA'           : 0,
     'J_CA'           : 0,
     'J_CB'           : 0,
-    'J_DC'           : 2.,
+#     'J_DC'           : 2.,
     'C'              : 1, # indegree
     # Stimulation parameters
     'stim_amp_A'      : 10.0, # pA
@@ -89,7 +89,7 @@ def simulate(par, **kwargs):
     parrot_neuron = nest.Create('parrot_neuron')
     nest.Connect(spike_generator, parrot_neuron)
     
-#     nodes = nodes + parrot_neuron
+    nodes = nodes + parrot_neuron
     
     # Connect nodes
     nn = {
