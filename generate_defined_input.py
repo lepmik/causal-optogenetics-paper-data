@@ -86,18 +86,20 @@ def simulate(par, **kwargs):
     nest.SetStatus(nodes, [{k: par[k] for k in keys}])
     
     spike_generator = nest.Create('spike_generator', params = {'spike_times': [10.0, 20.0, 50.0]})
-
-    nodes = nodes + spike_generator
+    parrot_neuron = nest.Create('parrot_neuron')
+    nest.Connect(spike_generator, parrot_neuron)
+    
+#     nodes = nodes + parrot_neuron
     
     # Connect nodes
     nn = {
         'A': tuple([nodes[0]]),
         'B': tuple([nodes[1]]),
         'C': tuple([nodes[2]]),
-        'D': tuple([nodes[3]])
+#         'D': tuple([nodes[3]])
     }
     
-    for key in ['J_AB', 'J_AC', 'J_BA', 'J_BC', 'J_CA', 'J_CB', 'J_DC']:
+    for key in ['J_AB', 'J_AC', 'J_BA', 'J_BC', 'J_CA', 'J_CB']:#, 'J_DC']:
         j = par.get(key)
         if j != 0 and j is not None:
             print('connecting ', key, j)
