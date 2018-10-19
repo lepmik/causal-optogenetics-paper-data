@@ -11,7 +11,7 @@ from tqdm import tqdm
 data_path = 'results'
 # trials = [30000]
 trials = [5000, 10000, 15000, 20000, 25000, 30000]
-N = 100
+N = 200
 winsize_iv = 4
 # latency_iv = 4
 
