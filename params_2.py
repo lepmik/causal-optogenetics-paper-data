@@ -1,6 +1,3 @@
-from quantities import s, ms, mV, pF, Hz, nS, pA
-import numpy as np
-
 parameters = {
     'msd'             : 1221, # Master seed
     'num_threads'     : 4,
@@ -11,7 +8,6 @@ parameters = {
     'N_rec_spike_in'  : None,
     'N_rec_state_ex'  : None,
     'N_rec_state_in'  : None,
-    'verbose'         : False,
     'res'             : 0.1, # Temporal resolution for simulation Delta t in ms
     'delay'           : 1.5, # Synaptic delay in ms
     # Neuron parameters
@@ -29,14 +25,14 @@ parameters = {
     'J'               : .2, # mV
     'g'               : 4.4,
     'eps'            : 0.1, # connection prob
-    'J_high'         : 2.05, # max connection strength
-    'J_low'          : 0.05,
+    'J_high'         : 2.0, # max connection strength
+    'J_low'          : 0.0,
     'p_var'          : .5, # percentage variation of mean in lognormal dist
     # Stimulation parameters
     'stim_N_ex'       : 800,
     'stim_N_in'       : 0,
     'stim_dist'       : 'poisson',
-    'stim_amp_ex'     : 7.0, # pA
+    'stim_amp_ex'     : 8.0, # pA
     'stim_amp_in'     : 0.0, # pA
     'stim_period'     : 100.0, # ms
     'stim_max_period' : 150, # only applies to poisson
@@ -49,8 +45,8 @@ parameters = {
     'NA': 0.37, # Numerical Aperture of fiber
     'S': 10.3, # mm^-1 scattering index for rat, mouse = 11.2
     'N_pos': 10,
-    'depth': .4,
+    'depth': .7,
     'Imax': 642, # max current pA
     'K': 0.84, # half-maximal light sensitivity of the ChR2 mW/mm2
-    'n': 0.76, # Hill coefficient
+    'n_hill': 0.76, # Hill coefficient
 }

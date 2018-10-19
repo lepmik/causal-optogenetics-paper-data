@@ -94,6 +94,7 @@ class IV:
             stim_miss, self.target,
             binsize=binsize, limit=limit, density=False)
         cch_diff = cch_hit - cch_miss
+        cch_diff[cch_diff < 0] = 0
         assert np.array_equal(bins, bins_)
         result = {'cch_hit': cch_hit,
                   'cch_miss': cch_miss,

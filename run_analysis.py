@@ -19,6 +19,8 @@ winsize_cch = 3
 latency_cch = 3
 binsize_corr = 5.
 min_stim = 1.
+source_pop = 'ex'
+target_pop = 'ex'
 
 if len(sys.argv) != 2:
     raise IOError('Usage: "python analyse.py parameters"')
@@ -37,10 +39,12 @@ for pop in ['ex', 'in']:
     spk = {sender: {'pop': pop, 'times': times[sender==senders]}
            for sender in np.unique(senders)}
     spiketrains.update(spk)
-
-sources = data['stim_nodes']['ex'][:int(N / 2)]
-targets = [n for n in data['nodes']['ex']
-           if n not in data['stim_nodes']['ex']][:int(N / 2)]
+stim_amps = data['stim_amps'][source_pop]
+sources = np.array(data['stim_nodes'][source_pop])
+targets = np.array([n for n in data['nodes'][target_pop] if n not in sources])
+idx_s = np.random.randint(0, len(sources), int(N / 2))
+idx_t = np.random.randint(0, len(targets), int(N / 2))
+sources, targets = sources[idx_s], targets[idx_t]
 assert len(sources) + len(targets) == N
 pbar = tqdm(total=int(N / 2)**2 * len(trials))
 for N_trials in trials:
@@ -65,7 +69,8 @@ for N_trials in trials:
             except ValueError:
                 logreg = np.nan
                 logreg_intercept = np.nan
-            stim_amp = data['stim_amps'][spiketrains[source]['pop']]
+
+            stim_amp = float(stim_amps[stim_amps.node==source].amp.values)
             # cc, cv and stuff
             w = conn[(conn.source==source) & (conn.target==target)].weight
             n_syn = len(w)
@@ -88,16 +93,16 @@ for N_trials in trials:
                 'cmax': cmax,
                 'cch': trans_prob,
                 'iv_wald': iv.wald,
-                'iv_cch': iv.trans_prob,
-                'iv_pcausal': iv.prob['pcausal'],
-                'iv_pfast': iv.prob['pfast'],
-                'iv_ppeak': iv.prob['ppeak'],
-                'iv_ptime': iv.prob['ptime'],
+                # 'iv_cch': iv.trans_prob,
+                # 'iv_pcausal': iv.prob['pcausal'],
+                # 'iv_pfast': iv.prob['pfast'],
+                # 'iv_ppeak': iv.prob['ppeak'],
+                # 'iv_ptime': iv.prob['ptime'],
                 'logreg': logreg,
                 'logreg_intercept': logreg_intercept,
                 'weight': weight,
                 'n_syn': n_syn,
-                'stim_amp': float(stim_amp[stim_amp.node==source].amp),
+                'stim_amp': stim_amp,
                 'source': source,
                 'source_pop': spiketrains[source]['pop'],
                 'source_cv': float(source_cv),

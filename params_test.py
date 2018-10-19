@@ -1,5 +1,5 @@
 parameters = {
-    'msd'             : 4321, # Master seed
+    'msd'             : 1234, # Master seed
     'num_threads'     : 4,
     'N_neurons'       : 1250,
     'N_ex'            : 1000,
@@ -23,10 +23,10 @@ parameters = {
     # Connection parameters
     'eta'             : .9, # external poisson rate in Hz
     'J'               : .2, # mV
-    'g'               : 3.0,
+    'g'               : 9.9,
     'eps'            : 0.1, # connection prob
-    'J_high'         : 2.0, # max connection strength
-    'J_low'          : 0.0,
+    'J_high'         : 2.00, # max connection strength
+    'J_low'          : 0.00,
     'p_var'          : .5, # percentage variation of mean in lognormal dist
     # Stimulation parameters
     'stim_N_ex'       : 800,
@@ -37,7 +37,7 @@ parameters = {
     'stim_period'     : 100.0, # ms
     'stim_max_period' : 150, # only applies to poisson
     'stim_duration'   : 2.0, # ms
-    'stim_N'          : 30000,
+    'stim_N'          : 300,
     # Optogenetics
     'I0': 10, # light intensity leaving fibre mW/mm2
     'r': 100e-3, # 100 um radius of fiber

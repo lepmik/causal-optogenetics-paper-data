@@ -51,30 +51,21 @@ def PSPnorm(tau_m, C_m, tau_syn):
             ((np.exp(-t_max / tau_m) - np.exp(-t_max / tau_syn)) / b -
              t_max * np.exp(-t_max / tau_syn)))
 
-
-def convert_params(params):
-    nest_units = ['pF', 'ms', 'mV', 'pA', 'nS', 'Hz']
-    success_keys = []
-    keys_w_units = [k for k, v in params.items() if isinstance(v, pq.Quantity)]
-    for unit in nest_units:
-        for key, val in params.items():
-            if isinstance(val, pq.Quantity):
-                try:
-                    params.update({key: val.rescale(unit).magnitude})
-                    success_keys.append(key)
-                except:
-                    pass
-            if isinstance(val, dict):
-                convert_params(val)
-    if set(keys_w_units) != set(success_keys):
-        raise ValueError('Parameters not sccessfully converted.')
-
-
 def rtrim(val, trim):
     if not val.endswith(trim):
         return val
     else:
         return val[:len(val) - len(trim)]
+
+
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            if obj.ndim == 0:
+                return float(obj)
+            else:
+                return obj.tolist()
+        return json.JSONEncoder.default(self, obj)
 
 
 def poisson_clipped(N, period, low, high):
@@ -90,7 +81,7 @@ def poisson_clipped(N, period, low, high):
 
 
 class Simulator:
-    def __init__(self, parameters, mpi=False, **kwargs):
+    def __init__(self, parameters, mpi=False, verbose=False, **kwargs):
         self.mpi = mpi
         if self.mpi:
             assert HAS_MPI
@@ -98,7 +89,6 @@ class Simulator:
         parameters = copy.deepcopy(parameters)
         if kwargs:
             parameters.update(kwargs)
-        convert_params(parameters)
 
         if 'data_path' not in parameters:
             parameters['data_path'] = os.getcwd()
@@ -108,6 +98,7 @@ class Simulator:
             if len(os.path.splitext(parameters['fname'])[-1]) != 0:
                 raise ValueError('fname should not have extention, it is' +
                                  ' properly added when needed')
+        parameters['verbose'] = verbose
         self.p = parameters
 
     def vprint(self, *val):
@@ -143,12 +134,14 @@ class Simulator:
         nest.SetStatus(self.nodes, [{k: self.p[k] for k in keys}])
         self.nodes_ex = self.nodes[:self.p['N_ex']]
         self.nodes_in = self.nodes[self.p['N_ex']:]
+
         self.p['J_ex'] = self.p['J'] / PSPnorm(
             self.p['tau_m'], self.p['C_m'], self.p['tau_syn_ex'])
         self.p['J_high_ex'] = self.p['J_high'] / PSPnorm(
             self.p['tau_m'], self.p['C_m'], self.p['tau_syn_ex'])
         self.p['J_low_ex'] = self.p['J_low'] / PSPnorm(
             self.p['tau_m'], self.p['C_m'], self.p['tau_syn_ex'])
+
         # Go negative later on
         self.p['J_in'] = self.p['g'] * self.p['J'] / PSPnorm(
             self.p['tau_m'], self.p['C_m'], self.p['tau_syn_in'])
@@ -156,10 +149,12 @@ class Simulator:
             self.p['tau_m'], self.p['C_m'], self.p['tau_syn_in'])
         self.p['J_low_in'] = self.p['J_low'] / PSPnorm(
             self.p['tau_m'], self.p['C_m'], self.p['tau_syn_in'])
+
         self.p['C_ex'] = int(self.p['eps'] * self.p['N_ex'])
         self.p['C_in'] = int(self.p['eps'] * self.p['N_in'])
 
     def set_connections(self):
+
         def mu(mean):
             return np.log(mean / np.sqrt(1 + self.p['p_var'] / mean**2))
 
@@ -284,8 +279,8 @@ class Simulator:
             return N
 
         def hill(I):
-            In = I**self.p['n']
-            return self.p['Imax'] * In / (self.p['K']**self.p['n'] + In) # peak amplitude of the current response
+            In = I**self.p['n_hill']
+            return self.p['Imax'] * In / (self.p['K']**self.p['n_hill'] + In) # peak amplitude of the current response
 
         # Simulate one period without stimulation
         nest.Simulate(self.stim_times[0])
@@ -455,18 +450,10 @@ class Simulator:
 
     def dump_params_to_json(self):
         fnameout = os.path.join(self.p['data_path'], self.p['fname'] + '.json')
-        parameters_no_units = {}
-        for key, val in parameters.items():
-            if isinstance(val, np.array):
-                if val.ndim == 0:
-                    parameters_no_units[key] = float(val)
-                else:
-                    parameters_no_units[key] = val.tolist()
-            else:
-                parameters_no_units[key] = val
         with open(fnameout, 'w') as outfile:
-            json.dump(parameters_no_units, outfile,
-                      sort_keys=True, indent=4)
+            json.dump(self.data['params'], outfile,
+                      sort_keys=True, indent=4,
+                      cls=NumpyEncoder)
 
 
 if __name__ == '__main__':
@@ -485,6 +472,13 @@ if __name__ == '__main__':
 
     sim = Simulator(parameters, mpi=False, data_path='results', fname=jobname)
     # sim.simulate(save=True, progress_bar=True, state=False)
+
+    print('Rate ex:', sim.data['params']['rate_ex'])
+
+    fig, ax = plt.subplots(1, 1)
+    conn = sim.data['connections']
+    conn.weight.hist(bins=100)
+    fig.savefig(sim.p['fname'] + '_syn_distribution.png')
 
     senders = sim.data['spiketrains']['ex']['senders']
     times = sim.data['spiketrains']['ex']['times']
