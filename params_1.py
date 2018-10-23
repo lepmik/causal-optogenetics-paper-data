@@ -37,7 +37,7 @@ parameters = {
     'stim_period'     : 100.0, # ms
     'stim_max_period' : 150, # only applies to poisson
     'stim_duration'   : 2.0, # ms
-    'stim_N'          : 300,
+    'stim_N'          : 30000,
     # Optogenetics
     'I0': 10, # light intensity leaving fibre mW/mm2
     'r': 100e-3, # 100 um radius of fiber

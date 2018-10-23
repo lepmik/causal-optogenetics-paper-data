@@ -285,14 +285,7 @@ class Simulator:
         # Simulate one period without stimulation
         nest.Simulate(self.stim_times[0])
 
-
-        self.stim_nodes_ex = self.nodes_ex[:self.p['stim_N_ex']]
-        self.stim_nodes_in = self.nodes_in[:self.p['stim_N_in']]
-
-        assert all(np.in1d(self.stim_nodes_ex, self.nodes_ex))
-        assert all(np.in1d(self.stim_nodes_in, self.nodes_in))
         # Set dc stimulation
-        self.stim_amps = {'ex': [], 'in': []}
         stims = []
         z = np.linspace(0, self.p['depth'], self.p['N_pos'])
         N_slice = affected_neurons(z).astype(int)
@@ -301,12 +294,16 @@ class Simulator:
         A = hill(self.p['I0'] * I)
         A = A / A.max()
         idx = 0
+        self.stim_amps_ex = {}
+        self.stim_amps_in = {}
+        self.stim_nodes_ex = []
+        self.stim_nodes_in = []
         for i, N_stim in enumerate(N_slice):
-            nodes = self.stim_nodes_ex[idx:idx + N_stim]
+            nodes = self.nodes_ex[idx:idx + N_stim]
+            self.stim_nodes_ex.extend(list(nodes))
             idx += N_stim
             amp = A[i] * self.p['stim_amp_ex']
-            stim_amps = [{'node': n, 'amp': amp} for n in nodes]
-            self.stim_amps['ex'].extend(stim_amps)
+            self.stim_amps_ex.update({n: amp for n in nodes})
             stim = nest.Create(
                 "dc_generator",
                 params={'amplitude': amp,
@@ -315,6 +312,8 @@ class Simulator:
             nest.Connect(stim, nodes)
             stims.append(stim)
 
+        assert all(np.in1d(self.stim_nodes_ex, self.nodes_ex))
+        assert all(np.in1d(self.stim_nodes_in, self.nodes_in))
         # Run multiple trials
         simtimes = np.concatenate((np.diff(self.stim_times),
                                   [np.min(np.diff(self.stim_times))]))
@@ -399,8 +398,8 @@ class Simulator:
                 'ex': self.stim_nodes_ex,
                 'in': self.stim_nodes_in},
             'stim_amps': {
-                'ex': pd.DataFrame(self.stim_amps['ex']),
-                'in': pd.DataFrame(self.stim_amps['in'])},
+                'ex': self.stim_amps_ex,
+                'in': self.stim_amps_in},
             'nodes': {
                 'ex': list(self.nodes_ex),
                 'in': list(self.nodes_in)},
@@ -460,9 +459,10 @@ if __name__ == '__main__':
     import sys
     import imp
     import os.path as op
+    from tools_plot import despine, set_style
 
-    if len(sys.argv) != 2:
-        raise IOError('Usage: "python simulator.py parameters"')
+    if len(sys.argv) not in [2, 3]:
+        raise IOError('Usage: "python simulator.py parameters <load-data>"')
 
     param_module = sys.argv[1]
     jobname = param_module.replace('.py', '')
@@ -471,38 +471,45 @@ if __name__ == '__main__':
     parameters = imp.load_module(jobname, f, p, d).parameters
 
     sim = Simulator(parameters, mpi=False, data_path='results', fname=jobname)
-    # sim.simulate(save=True, progress_bar=True, state=False)
-
+    if not 'load-data' in sys.argv:
+        sim.simulate(save=True, progress_bar=True, state=False)
+    sim.dump_params_to_json()
     print('Rate ex:', sim.data['params']['rate_ex'])
+    print('Rate in:', sim.data['params']['rate_in'])
 
+    set_style('article', w=.4)
     fig, ax = plt.subplots(1, 1)
     conn = sim.data['connections']
     conn.weight.hist(bins=100)
-    fig.savefig(sim.p['fname'] + '_syn_distribution.png')
+    plt.grid(False)
+    despine(ax=fig.gca())
+    plt.xlabel('Synaptic weight [pA]')
+    plt.xticks([-1, -.5, 0, .5, 1])
+    fig.savefig(sim.p['fname'] + '_syn_dist.pdf', bbox_inches='tight')
 
-    senders = sim.data['spiketrains']['ex']['senders']
-    times = sim.data['spiketrains']['ex']['times']
-    stim_times = sim.data['epoch']['times']
-    sender_ids = np.unique(senders)
-
-    spiketrains = {sender: times[sender==senders]
-                   for sender in sender_ids}
-    winsize_iv = 4
-    latency_iv = 4 # not used
-    hit_rates = [IV(s1, [], stim_times,  winsize=winsize_iv, latency=latency_iv).hit_rate
-                 for s1 in spiketrains.values()]
-
-
-    fig, ax = plt.subplots(1, 2)
-    width = 1
-    bins = np.arange(0, 11, width)
-    hist, bins = np.histogram(sim.data['stim_amps']['ex'].amp, bins=bins)
-    print(bins)
-    print(hist, sum(hist))
-    ax[0].bar(bins[1:], hist, align='edge', width=-width)
-
-    width = .1
-    bins = np.arange(0, 1+width, width)
-    hist, bins = np.histogram(hit_rates, bins=bins)
-    plt.bar(bins[1:], hist, align='edge', width=-width)
-    fig.savefig(sim.p['fname'] + '_stim_distribution.png')
+    # senders = sim.data['spiketrains']['ex']['senders']
+    # times = sim.data['spiketrains']['ex']['times']
+    # stim_times = sim.data['epoch']['times']
+    # sender_ids = np.unique(senders)
+    #
+    # spiketrains = {sender: times[sender==senders]
+    #                for sender in sender_ids}
+    # winsize_iv = 4
+    # latency_iv = 4 # not used
+    # hit_rates = [IV(s1, [], stim_times,  winsize=winsize_iv, latency=latency_iv).hit_rate
+    #              for s1 in spiketrains.values()]
+    #
+    #
+    # fig, ax = plt.subplots(1, 2)
+    # width = 1
+    # bins = np.arange(0, 11, width)
+    # hist, bins = np.histogram(sim.data['stim_amps']['ex'].values(), bins=bins)
+    # print(bins)
+    # print(hist, sum(hist))
+    # ax[0].bar(bins[1:], hist, align='edge', width=-width)
+    #
+    # width = .1
+    # bins = np.arange(0, 1+width, width)
+    # hist, bins = np.histogram(hit_rates, bins=bins)
+    # plt.bar(bins[1:], hist, align='edge', width=-width)
+    # fig.savefig(sim.p['fname'] + '_stim_distribution.png')

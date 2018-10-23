@@ -70,7 +70,7 @@ for N_trials in trials:
                 logreg = np.nan
                 logreg_intercept = np.nan
 
-            stim_amp = float(stim_amps[stim_amps.node==source].amp.values)
+            stim_amp = float(stim_amps[source])
             # cc, cv and stuff
             w = conn[(conn.source==source) & (conn.target==target)].weight
             n_syn = len(w)

@@ -6,20 +6,20 @@ import tempfile
 params = sys.argv[1:]
 ################################################################################
 ################################# SIMULATION ###################################
-# processes = []
-# for param in params:
-#     name = op.split(param)[-1].replace('.py', '')
-#     f = tempfile.TemporaryFile()
-#     p = subprocess.Popen(['python', 'simulator.py', param], stdout=f)
-#     processes.append((p, f, name))
-#
-# for p, f, name in processes:
-#     p.wait()
-#     f.seek(0)
-#     logname = op.join("log_sim_{}.txt".format(name))
-#     with open(logname, "wb") as logfile:
-#         logfile.write(f.read())
-#     f.close()
+processes = []
+for param in params:
+    name = op.split(param)[-1].replace('.py', '')
+    f = tempfile.TemporaryFile()
+    p = subprocess.Popen(['python', 'simulator.py', param], stdout=f)
+    processes.append((p, f, name))
+
+for p, f, name in processes:
+    p.wait()
+    f.seek(0)
+    logname = op.join("log_sim_{}.txt".format(name))
+    with open(logname, "wb") as logfile:
+        logfile.write(f.read())
+    f.close()
 
 ################################################################################
 ################################# ANALYSIS #####################################

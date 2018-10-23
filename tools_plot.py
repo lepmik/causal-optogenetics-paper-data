@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import quantities as pq
-#from tools_analysis import make_spiketrain_trials
+from tools_analysis import make_spiketrain_trials
 import neo
 import os.path as op
 
@@ -155,13 +155,11 @@ def label_diff(x1, x2, y, text, ax, color='k', pad_txt=.03, pad_line=0.01):
 
 def plot_psth(spike_train=None, epoch=None, trials=None, xlim=[None, None],
               fig=None, axs=None, legend_loc=1, color='b',
-              title='', stim_alpha=.2, stim_color=None,
-              stim_label='Stim on', stim_style='patch', stim_offset=0*pq.s,
               rast_ylabel='Trials', rast_size=10,
               hist_color=None, hist_edgecolor=None,
               hist_ylim=None,  hist_ylabel=None,
               hist_output='counts', hist_binsize=None, hist_nbins=100,
-              hist_alpha=1.):
+              hist_alpha=1., hist_log=False):
     """
     Visualize clustering on amplitude at detection point
 
@@ -176,12 +174,10 @@ def plot_psth(spike_train=None, epoch=None, trials=None, xlim=[None, None],
     axs : matplotlib axes (must be 2)
     legend_loc : 'outside' or matplotlib standard loc
     color : color of spikes
-    title : figure title
     stim_alpha : float
     stim_color : str
     stim_label : str
     stim_style : 'patch' or 'line'
-    stim_offset : pq.Quantity
         The amount of offset for the stimulus relative to epoch.
     rast_ylabel : str
     hist_color : str
@@ -216,14 +212,7 @@ def plot_psth(spike_train=None, epoch=None, trials=None, xlim=[None, None],
     else:
         assert spike_train is None
     dim = trials[0].times.dimensionality
-    if stim_style == 'patch':
-        if epoch is not None:
-            stim_duration = epoch.durations.rescale(dim).magnitude.max()
-        else:
-            warnings.warn('Unable to acquire stimulus duration, setting ' +
-                          'stim_style to "line". Please provede "epoch"' +
-                          ' in order to use stim_style "patch".')
-            stim_style = 'line'
+
     # raster
     plot_raster(trials, color=color, ax=rast_ax, ylabel=rast_ylabel,
                 marker_size=rast_size)
@@ -233,36 +222,15 @@ def plot_psth(spike_train=None, epoch=None, trials=None, xlim=[None, None],
     plot_spike_histogram(trials, color=hist_color, ax=hist_ax,
                          output=hist_output, binsize=hist_binsize,
                          nbins=hist_nbins, edgecolor=hist_edgecolor,
-                         ylabel=hist_ylabel, alpha=hist_alpha)
+                         ylabel=hist_ylabel, alpha=hist_alpha,
+                         log=hist_log)
     if hist_ylim is not None: hist_ax.set_ylim(hist_ylim)
-    # stim representation
-    stim_color = color if stim_color is None else stim_color
-    if stim_style == 'patch':
-        fill_stop = stim_duration
-        import matplotlib.patches as mpatches
-        line = mpatches.Patch([], [], color=stim_color, label=stim_label,
-                              alpha=stim_alpha)
-    elif stim_style == 'line':
-        fill_stop = 0
-        import matplotlib.lines as mlines
-        line = mlines.Line2D([], [], color=stim_color, label=stim_label)
-    stim_offset = stim_offset.rescale(dim).magnitude
-    hist_ax.axvspan(stim_offset, fill_stop + stim_offset, color=stim_color,
-                    alpha=stim_alpha, zorder=0)
-    rast_ax.axvspan(stim_offset, fill_stop + stim_offset, color=stim_color,
-                    alpha=stim_alpha, zorder=0)
-    if legend_loc == 'outside':
-        hist_ax.legend(handles=[line], bbox_to_anchor=(0., 1.02, 1., .102),
-                       loc=4, ncol=2, borderaxespad=0.)
-    else:
-        hist_ax.legend(handles=[line], loc=legend_loc, ncol=2, borderaxespad=0.)
-    if title is not None: hist_ax.set_title(title)
     return fig
 
 
 def plot_spike_histogram(trials, color='b', ax=None, binsize=None, bins=None,
                          output='counts', edgecolor=None, alpha=1., ylabel=None,
-                         nbins=None):
+                         nbins=None, log=False):
     """
     histogram plot of trials
 
@@ -349,8 +317,10 @@ def plot_spike_histogram(trials, color='b', ax=None, binsize=None, bins=None,
         ax.set_ylabel(ylabel)
     else:
         raise TypeError('ylabel must be str not "' + str(type(ylabel)) + '"')
-    ax.bar(bs[:len(time_hist)], time_hist.magnitude.flatten(), width=bs[1]-bs[0],
+    ax.bar(bs[:len(time_hist)], time_hist.magnitude.flatten(), width=bs[0]-bs[1],
            edgecolor=edgecolor, facecolor=color, alpha=alpha, align='edge')
+    if log:
+        ax.set_yscale('log')
     return ax
 
 
