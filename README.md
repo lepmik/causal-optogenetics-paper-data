@@ -1,4 +1,4 @@
-# causal-opto-connecto
+# causal-optoconnectics
 Obtaining causal connectivity from optogenetic stimulation and electrical recordings
 
 # Notes
