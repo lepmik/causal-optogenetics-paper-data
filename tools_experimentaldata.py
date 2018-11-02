@@ -1,4 +1,3 @@
-import sys
 import os
 import numpy as np
 import neo
@@ -17,15 +16,10 @@ from tqdm import tqdm
 import statsmodels.api as sm
 import copy
 from skimage import measure
-import elephant.conversion as conv
-import elephant.spike_train_correlation as corr
-sys.path.append('../exana/'),
-from exana.statistics.tools import (ccg_significance,
-                                    ccg,
-                                    hollow_kernel,
-                                    correlogram)
-from exana.statistics.tools import poisson_continuity_correction as pcc
-from cross_correlation import cch_convolve
+from tools_analysis import (cch_significance,
+                            hollow_kernel,
+                            correlogram,
+                            poisson_continuity_correction as pcc)
 
 
 def loadmat(filename):
@@ -1289,7 +1283,7 @@ def calculate_transmission_prob(blks,
                             cond_post and
                             len(spktr_pre) > 0 and
                             len(spktr_post) > 0):
-                        pcausal, pfast, bins, cch, cch_s = ccg_significance(
+                        pcausal, pfast, bins, cch, cch_s = cch_significance(
                             spktr_pre,
                             spktr_post,
                             limit=ccg_time_limit,
@@ -2169,3 +2163,32 @@ def bootstrap_iv(
                       ignore_index=True)
             
     return df
+
+
+def ccg(t1, t2=None, binsize=1*pq.ms, limit=100*pq.ms, auto=False, density=None,
+        **kwargs):
+    '''
+    Wrapper for cross_correlation_histogram from elephant.
+
+    Note
+    ----
+    returns bins at right edges
+    '''
+    import elephant.spike_train_correlation as corr
+    import elephant.conversion as conv
+    if auto: t2 = t1
+    cch, bin_ids =  corr.cross_correlation_histogram(
+        conv.BinnedSpikeTrain(t1, binsize),
+        conv.BinnedSpikeTrain(t2, binsize),
+        window=[-limit, limit],
+        **kwargs)
+    bins = cch.times
+    cch = cch.magnitude.flatten()
+    if auto:
+        # Compensate for the peak at time zero that results in autocorrelations
+        # by subtracting the total number of spikes from that bin. Note
+        # possible numerical issue here because 0.0 may fall at a bin edge.
+        c_temp, bins_temp = np.histogram([0.], bins=bins)
+        bin_containing_zero = np.nonzero(c_temp)[0][0]
+        cch[bin_containing_zero] = 0
+    return cch, bins
