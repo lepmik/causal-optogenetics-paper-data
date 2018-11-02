@@ -17,10 +17,9 @@ def test_hist_stim():
     hist_ret = hist_stim(stim_times,
                          sender,
                          target,
-                         0,
                          winsize,
                          latency)
-    
+
     hist = np.zeros([len(stim_times), 2])
     src = np.searchsorted
     for idx, t in enumerate(stim_times):

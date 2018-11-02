@@ -11,15 +11,16 @@ import collections
 import scipy as sc
 from method import IV
 from matplotlib import pyplot as plt
-from tools import despine
+from tools_plot import despine
 from tqdm import tqdm
 import statsmodels.api as sm
 import copy
 from skimage import measure
+
 from tools_analysis import (cch_significance,
                             hollow_kernel,
-                            correlogram,
-                            poisson_continuity_correction as pcc)
+                            correlogram)
+from tools_analysis import poisson_continuity_correction as pcc
 
 
 def loadmat(filename):
@@ -158,7 +159,7 @@ def load_unitlabels(path_to_optolabels, data_dir):
                                                 'cell_id'])
     units_db_tagged_pre['class'] = 'tagged_pre'
     units_db_tagged_pre['class_index'] = units_db_tagged_pre.index
-    
+
     units_db_tagged_post = pd.DataFrame(tagged_post,
                                         columns=['Sess_id',
                                                  'shank_id',
@@ -182,7 +183,7 @@ def load_unitlabels(path_to_optolabels, data_dir):
                                                     'cell_id'])
     units_db_nottagged_post['class'] = 'nottagged_post'
     units_db_nottagged_post['class_index'] = units_db_nottagged_post.index
-    
+
     units_db = pd.DataFrame(columns=['Sess_id',
                                      'shank_id',
                                      'unit_id',
@@ -249,7 +250,7 @@ def download_files_by_dict(file_dict,
 def download_files(units_db, link_db,
                    files_ext_general,
                    files_ext_by_shank):
-    
+
     for i, row in units_db.iterrows():
         dir_i = row['animal']
         date_i = row['date']
@@ -315,14 +316,14 @@ def create_neo_structure(file_dict,
                 clusters_i = clusters_i[1:]
                 # make sure that number of clusters match
                 assert n_clusters_i == len(np.unique(clusters_i))
-                
+
                 times_f = open(path_i + date_i + '.res.' + str(shank_i), 'r')
                 # get times of spikes
                 times_i = np.array([
                             float(time_j) for time_j
                             in times_f.readlines()])
                 times_f.close()
-                
+
                 # divide by sampling rate
                 times_i /= sampling_rate
 
@@ -351,7 +352,7 @@ def create_neo_structure(file_dict,
                                           path=path_i,
                                           file=(date_i + '.clu.' +
                                                 str(shank_i)))
-                            
+
                         spk_ts = times_i[clusters_i == clu_i]
                         train_i = neo.SpikeTrain(
                             times=spk_ts,
@@ -434,7 +435,7 @@ def add_stimulation_data_to_blocks_vectorized(blks):
                        len(stim_intensity), len(stim_label),
                        len(stim_shank), len(stim_loc)]
             assert all(x == lengths[0] for x in lengths)
-            
+
             epc = neo.Epoch(
                 times=stim_start,
                 durations=stim_dur,
@@ -546,7 +547,7 @@ def add_stimulation_data_to_blocks(blks):
                        len(stim_intensity), len(stim_label),
                        len(stim_shank), len(stim_loc)]
             assert all(x == lengths[0] for x in lengths)
-            
+
             epc = neo.Epoch(
                 times=stim_start,
                 durations=stim_dur,
@@ -565,7 +566,7 @@ def get_first_spikes(spktr,
     '''
     Get time difference between events in epoch to
     the next spike in spiketrain
-    
+
     Parameters
     ----------
     spktr : neo.Spiketrain
@@ -666,12 +667,12 @@ def get_pseudo_epoch(epc,
             ts_i = np.arange(start_i, stop_i, dur_i)
             ts_pseudo.append(ts_i)
             durs_pseudo.append(np.repeat(dur_i, len(ts_i)))
-        
+
         ts_pseudo = np.concatenate(ts_pseudo) * units
         durs_pseudo = np.concatenate(durs_pseudo) * units
     else:
         raise ValueError('Type ' + type + ' not recognized')
-    
+
     epc_pseudo = neo.Epoch(ts_pseudo, durations=durs_pseudo)
 
     return epc_pseudo
@@ -705,9 +706,9 @@ def detect_fast_responding_units(blks, binwidth,
                        event_sel_dict we decided here whether we should
                        only look at stimulations at same shank as respective
                        unit
-                       
-    
-    
+
+
+
     Returns
     -------
     out : pd.DataFrame, dataframe summarizing results for each unit
@@ -715,7 +716,7 @@ def detect_fast_responding_units(blks, binwidth,
     df = pd.DataFrame(columns=['animal', 'date', 'cluster', 'shank',
                                'pval', 'fastresponding',
                                'p0', 'n0', 'p1', 'n1'])
-    
+
     src = np.searchsorted
     for blk in blks:
         print(blk.annotations['animal'] + ' - ' + blk.annotations['date'])
@@ -741,7 +742,7 @@ def detect_fast_responding_units(blks, binwidth,
                 'full',
                 binwidth)
             refts = epc_pseudo.times.rescale(pq.ms).magnitude
-            
+
             for unit in units_shank:
                 spktr = unit.spiketrains[0]
                 spkts = spktr.times.rescale(pq.ms).magnitude
@@ -785,7 +786,7 @@ def select_times_from_epoch(epoch, conditions):
                  form is {attribute: value}
                  if value is list with len=2, then it is considered a range.
                  left edge is included
-    
+
     Returns
     -------
     epoch_out : neo.Epoch
@@ -820,7 +821,7 @@ def select_times_from_epoch(epoch, conditions):
                 bool_i = np.logical_and(vals_epc >= start,
                                         vals_epc < stop)
                 bools.append(bool_i)
-                
+
             elif len(val.shape) == 2:
                 bools_sub = []
                 assert val.shape[1] == 2
@@ -837,7 +838,7 @@ def select_times_from_epoch(epoch, conditions):
     bool_sel = np.logical_and.reduce(bools)
     ts_sel = ts[bool_sel]
     durations = epoch.durations[bool_sel]
-        
+
     epoch_out = neo.Epoch(times=ts_sel,
                           labels=epoch.labels,
                           durations=durations,
@@ -917,12 +918,12 @@ def annotate_units_from_db(units_db, blks):
     '''
     Take dataframe from matlab structure and annotate
     respective units in neo blocks
-    
+
     Params
     ------
     units_db : pandas.DataFrame
     blks : list of neo.Block
-    
+
     '''
 
     for blk in blks:
@@ -937,7 +938,7 @@ def annotate_units_from_db(units_db, blks):
                 (units_db['unit_id'] == unit_i.annotations['cluster'])]
             unit_i.annotations['tagged'] = np.any(
                 unit_i_db['class'] == 'tagged_pre')
-            
+
 
 def multislice(x, starts, stops):
     '''
@@ -966,7 +967,7 @@ def multislice(x, starts, stops):
     idcs = map(lambda v: np.r_[v[0]:v[1]], zip(srt_starts, srt_stops))
     idcs = np.concatenate(list(idcs))
     x_sliced = x[idcs]
-    
+
     return x_sliced
 
 
@@ -1036,7 +1037,7 @@ def determine_if_spktr_is_tagged(spktr,
     epc_ts = epoch.times.rescale(spk_ts.units)
     if len(epc_ts) <= 2:
         raise Warning('Very low sample size')
-    
+
     epc_durs = epoch.durations.rescale(spk_ts.units)
     delta_t_before = delta_t_before.rescale(spk_ts.units)
     total_time = np.sum(epc_durs)
@@ -1046,7 +1047,7 @@ def determine_if_spktr_is_tagged(spktr,
     n_spks_stim = n_events_in_multislice(spk_ts,
                                          starts_stim,
                                          stops_stim)
-    
+
     # count spikes before
     starts_bfr = starts_stim - delta_t_before
     stops_bfr = stops_stim - delta_t_before
@@ -1057,7 +1058,7 @@ def determine_if_spktr_is_tagged(spktr,
 #                          src(stops_stim, starts_bfr))
 #    assert np.array_equal(src(starts_stim, stops_bfr),
 #                          src(stops_stim, stops_bfr))
-    
+
     n_spks_bfr = n_events_in_multislice(spk_ts,
                                         starts_bfr,
                                         stops_bfr)
@@ -1074,7 +1075,7 @@ def determine_if_spktr_is_tagged(spktr,
                                             alternative='greater')
         if pval <= p_sign:
             cond1 = True
-    
+
     # condition 2)
     cond2 = False
     if direction == 'exc' and np.mean(n_spks_stim) > 1.5*np.mean(n_spks_bfr):
@@ -1109,7 +1110,7 @@ def annotate_units_by_stim(blks,
 
         for unit_i in units:
             spktr = unit_i.spiketrains[0]
-            
+
             label_tagged = determine_if_spktr_is_tagged(
                 spktr,
                 epc,
@@ -1122,7 +1123,7 @@ def annotate_units_by_stim(blks,
 def select_blocks_upon_stimtype(blks, stimtype=None, min_n=1,
                                 min_intens=None, max_intens=None):
     blks_sel = []
-    
+
     for blk in blks:
         seg = blk.segments[0]
         epc = seg.epochs[0]
@@ -1168,7 +1169,7 @@ def plot_ccgs_between_stim_pre_and_post(spktr_stim,
         ccg_stimpre = ccg_stimpre/np.sum(ccg_stimpre)
         ccg_stimpost_pre1 = ccg_stimpost_pre1 / np.sum(ccg_stimpost_pre1)
         ccg_stimpost_pre0 = ccg_stimpost_pre0 / np.sum(ccg_stimpost_pre0)
-    
+
     cntr = int(len(bins)/2)
     fig, ax = plt.subplots(3, 1)
     ax[0].bar(bins[cntr:], ccg_stimpre[cntr:]/len(pre0),
@@ -1189,7 +1190,7 @@ def regplot(x, y, data, model, ci=95.,
             xlabel=True, ylabel=True, colorbar=True,
             groupby=False,
             **kwargs):
-    
+
     from seaborn import utils
     from seaborn import algorithms as algo
     if ax is None:
@@ -1197,12 +1198,12 @@ def regplot(x, y, data, model, ci=95.,
     _x = data[x]
     _y = data[y]
     grid = np.linspace(_x.min(), _x.max(), 100)
-    
+
     X = np.c_[np.ones(len(_x)), _x]
     G = np.c_[np.ones(len(grid)), grid]
-    
+
     results = model(_y, X, **kwargs).fit()
-    
+
     def reg_func(xx, yy):
         yhat = model(yy, xx, **kwargs).fit().predict(G)
         return yhat
@@ -1217,7 +1218,7 @@ def regplot(x, y, data, model, ci=95.,
     h = plt.Line2D([], [], label='$R^2 = {:.3f}$'.format(results.rsquared),
                    ls='-', color='k')
     plt.legend(handles=[h])
-    
+
     if xlabel:
         if isinstance(xlabel, str):
             ax.set_xlabel(xlabel)
@@ -1405,7 +1406,7 @@ def calculate_iv_intensity(blks,
                  'stimintens_stop',
                  'ys',
                  'Ysr'])
-    
+
     for blk in blks:
         animal = blk.annotations['animal']
         date = blk.annotations['date']
@@ -1502,7 +1503,7 @@ def calculate_iv_intensity(blks,
                  'stimintens_stop',
                  'ys',
                  'Ysr'])
-    
+
     for blk in blks:
         animal = blk.annotations['animal']
         date = blk.annotations['date']
@@ -1597,7 +1598,7 @@ def calculate_iv_sigstim(blks,
                  'hitrate_stim',
                  'ys',
                  'Ysr'])
-    
+
     for blk in blks:
         animal = blk.annotations['animal']
         date = blk.annotations['date']
@@ -1680,7 +1681,7 @@ def keep_spikes_by_stim(blks,
     '''
     Keep spikes that are either within ('stim') or between
     ('nostim') stimulations
-    
+
     Params
     ------
     blks : list of neo.Blocks
@@ -1812,7 +1813,7 @@ def select_only_first_spike(blks,
                     t_stop=spktr.t_stop)
                 unit.spiketrains[0] = spktr_new
     return blks_new
-                
+
 
 def find_significant_stimulations(blks,
                                   stimccg_binsize,
@@ -1897,7 +1898,7 @@ def find_significant_stimulations(blks,
 def spktr_multislice(spktr, starts, stops):
     """
     Slice spiketrain at multiple times and merge slices.
-    
+
     """
     spkts = spktr.times
     spkts_start = spktr.t_start.rescale(spkts.units)
@@ -2028,7 +2029,7 @@ def bootstrap_cch(
         spktr_post = unit_post.spiketrains[0]
         spktr_pre = unit_pre.spiketrains[0]
         len_spktr_pre = len(spktr_pre)
-        
+
         lst_cch = []
         # cut spike train in small pieces and calculate
         # cch on each piece
@@ -2103,7 +2104,7 @@ def bootstrap_iv(
                blk_i.annotations['date'] == date][0]
         seg = blk.segments[0]
         epc = seg.epochs[0]
-        
+
         # get units
         units = blk.channel_indexes[0].children
         unit_pre = [unit_i for unit_i in units if
@@ -2151,7 +2152,7 @@ def bootstrap_iv(
             ys_i = iv_lams_i[iv_stim_i, 1]
             ysr_i = iv_lams_i[iv_stimRef_i, 1]
             wald = ys_i.mean() - ysr_i.mean()
-        
+
             df = df.append({
                 'animal': animal,
                 'date': date,
@@ -2161,11 +2162,11 @@ def bootstrap_iv(
                 'shank_post': shank_post,
                 'ivwald': wald},
                       ignore_index=True)
-            
     return df
 
 
-def ccg(t1, t2=None, binsize=1*pq.ms, limit=100*pq.ms, auto=False, density=None,
+def ccg(t1, t2=None, binsize=1*pq.ms,
+        limit=100*pq.ms, auto=False, density=None,
         **kwargs):
     '''
     Wrapper for cross_correlation_histogram from elephant.
@@ -2177,7 +2178,7 @@ def ccg(t1, t2=None, binsize=1*pq.ms, limit=100*pq.ms, auto=False, density=None,
     import elephant.spike_train_correlation as corr
     import elephant.conversion as conv
     if auto: t2 = t1
-    cch, bin_ids =  corr.cross_correlation_histogram(
+    cch, bin_ids = corr.cross_correlation_histogram(
         conv.BinnedSpikeTrain(t1, binsize),
         conv.BinnedSpikeTrain(t2, binsize),
         window=[-limit, limit],

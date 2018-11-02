@@ -8,6 +8,7 @@ import seaborn as sns
 
 
 def hist_stim(stim_times, source, target, winsize, latency):
+    """Makes binary classification of response in windows"""
     hist = np.zeros([len(stim_times), 2])
     src = np.searchsorted
     hist[:, 0] = (
@@ -37,6 +38,20 @@ class IV:
             size of window around PSTH
         latency : float
             time untill response of post-synaptic neuron (begining of PSTH peak)
+
+        Examples
+        --------
+        import numpy as np
+        sptr1 = np.random.random(1000) * 10
+        sptr2 = np.random.random(1000) * 10
+        # stimulate every second (without response)
+        stim = np.arange(0, 10, 1)
+        # we expect the stimulation response to last 0.1 s
+        winsize = .1
+        # we expect a post-synaptic response in sptr2 after 0.1 s after stimulation
+        latency = .1
+        iv = IV(sptr1, sptr2, stim, .1, 0)
+
         '''
         p = {
             'width': 10,
@@ -60,12 +75,14 @@ class IV:
 
     @property
     def wald(self):
+        """The IV estimator used in the paper"""
         ys = self.lams[self.Stim, 1]
         ysr = self.lams[self.StimRef, 1]
         return(ys.mean() - ysr.mean())
 
     @property
     def logreg(self):
+        """LOGIT"""
         X, Y = self.lams[:, 0], self.lams[:, 1]
         lr = LogisticRegression()
         lr.fit(X.reshape(-1, 1).astype(int), Y.astype(int))
@@ -73,6 +90,9 @@ class IV:
 
     @property
     def trans_prob(self):
+        """An IV version using CCH, yielding similar results as with wald.
+        Note, this is not the naive CCH method.
+        """
         mask = ((self.cch['bins'] >= self.latency) &
                 (self.cch['bins'] <= self.latency + self.winsize))
         trans_prob = sum(self.cch['cch_hit'][mask] / sum(self.Stim) -
