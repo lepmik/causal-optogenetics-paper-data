@@ -378,8 +378,9 @@ These preliminary results illustrate that the IV approach may be applicable to a
 \includegraphics[width=0.6\textwidth]{Optodata_comparisonIV_CCH.pdf}
 \caption{\textbf{IV and CCH estimates on hippocampal recordings.}
 IV and CCH estimates for connections from optogenetically activated to non-activated units that showed a significant peak in the CCH \citep{English2017}.
-Dashed line represents identity. 
-Error bars are 95\% confidence intervals calculated by bootstrapping.
+Dashed line represents identity.
+Blue dots are median values and error bars indicate the $95$\% confidence intervals calculated by bootstrapping.
+For better visualization, we omitted one estimated connection, $CCH = 0.01$ and $IV = 0.036$.
 }
 \label{fig:optodata}
  \end{figure}
@@ -835,8 +836,8 @@ For CCH estimates, we employed the additive property of the CCH function.
 We subdivided spiketrains of a session in in $100 s$ segments, and calculated the CCH for each segment individually.
 We then randomly selected segments with replacement, to match the full length of the session.
 Estimates from CCH were calculated on the sum of segments.
-For the IV estimates, we detected, as before, for each optogenetic stimulation event wether pre- and postsynaptic units were active.
-We then randomly selected stimulation events with replacement to match the original number of stimulations and calculated the IV estimate on the random sample.
+For the IV estimates, we detected, for each optogenetic stimulation event, wether pre- and postsynaptic units are active.
+Further, we randomly selected stimulation events with replacement to match the original number of stimulations and calculated the IV estimate on the random sample.
 
 \FloatBarrier
 %-------------------------------------------------------------------------------
