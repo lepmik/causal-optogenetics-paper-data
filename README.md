@@ -23,7 +23,7 @@ Then the analysis to produce the figures is contained in respective jupyter note
 Experimental data was analysed in a dedicated docker environment.
 If you want to run the container, you need to specify the location of your local copy of the causal-optogenetics repo
 ```bash
-docker run -it -p 8888:8888 -v /path/to/causal-optogenetics/:/home/jovyan/work/instrumentalVariable/causal_optogenetics tristanstoeber/instrumentalvariable jupyter notebook --ip 0.0.0.0 --no-browser --allow-root
+docker run -it -p 8888:8888 -v /path/to/causal-optoconnectics/:/home/jovyan/work/instrumentalVariable/causal-optoconnectics/ tristanstoeber/instrumentalvariable jupyter notebook --ip 0.0.0.0 --no-browser --allow-root
 ```
 After starting, copy the returned link with the complete jupyter token into your browser.
 You need to change the docker container id to 'localhost'.
