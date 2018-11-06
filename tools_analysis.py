@@ -1,6 +1,7 @@
 import quantities as pq
 import numpy as np
 import neo
+import pdb
 
 
 def coef_var(spike_trains):
@@ -88,11 +89,12 @@ def poisson_continuity_correction(n, observed):
     correlations between spike trains. Journal of neuroscience methods, 179(1),
     90-100.
     """
+    from scipy.stats import poisson
     if n.ndim == 0:
         n = np.array([n])
     assert n.ndim == 1
-    from scipy.stats import poisson
     assert np.all(n >= 0)
+    n = n.astype(int)
     result = np.zeros(n.shape)
     if n.shape != observed.shape:
         observed = np.repeat(observed, n.size)
