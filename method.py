@@ -9,17 +9,22 @@ import seaborn as sns
 
 def hist_stim(stim_times, source, target, winsize, latency):
     """Makes binary classification of response in windows"""
-    hist = np.zeros([len(stim_times), 2])
     src = np.searchsorted
-    hist[:, 0] = (
-        # stim response
-        src(source, stim_times, 'left') <
-        src(source, stim_times + winsize, 'right'))
-    hist[:, 1] = (
-        # stim synaptic response
-        src(target, stim_times + latency, 'left') <
-        src(target, stim_times + latency + winsize, 'right'))
-    return hist
+    result = {
+        'stim_response': (
+            # stim response
+            src(source, stim_times, 'left') <
+            src(source, stim_times + winsize, 'right')),
+        'syn_response': (
+            # stim synaptic response
+            src(target, stim_times + latency, 'left') <
+            src(target, stim_times + latency + winsize, 'right')),
+        'nostim_response': (
+            # no stim response
+            src(source, stim_times - winsize, 'left') <
+            src(source, stim_times, 'right'))
+    }
+    return result
 
 
 class IV:
@@ -67,23 +72,27 @@ class IV:
         self.target = target
         self.latency = latency
         self.winsize = winsize
-        self.lams = np.array(
-            hist_stim(stim_times, source, target,
-                      self.winsize, self.latency))
-        self.StimRef = self.lams[:, 0] == 0
-        self.Stim = self.StimRef == False
+        self.responses = hist_stim(
+            stim_times, source, target, self.winsize, self.latency)
+        self.z0 = self.responses['stim_response'] * self.responses['nostim_response'] == 0
+        self.z1 = self.z0 == False
+
+        # self.z0 = self.lams[:, 0] == 0
+        # self.z1 = self.z0 == False
 
     @property
     def wald(self):
         """The IV estimator used in the paper"""
-        ys = self.lams[self.Stim, 1]
-        ysr = self.lams[self.StimRef, 1]
-        return(ys.mean() - ysr.mean())
+        y1 = self.responses['syn_response'][self.z1]
+        y0 = self.responses['syn_response'][self.z0]
+        x1 = self.responses['stim_response'][self.z1]
+        x0 = self.responses['stim_response'][self.z0]
+        return (y1.mean() - y0.mean()) / (x1.mean() - x0.mean())
 
     @property
     def logreg(self):
         """LOGIT"""
-        X, Y = self.lams[:, 0], self.lams[:, 1]
+        X, Y = self.responses['stim_response'], self.responses['syn_response']
         lr = LogisticRegression()
         lr.fit(X.reshape(-1, 1).astype(int), Y.astype(int))
         return lr
@@ -95,8 +104,8 @@ class IV:
         """
         mask = ((self.cch['bins'] >= self.latency) &
                 (self.cch['bins'] <= self.latency + self.winsize))
-        trans_prob = sum(self.cch['cch_hit'][mask] / sum(self.Stim) -
-                         self.cch['cch_miss'][mask] / sum(self.StimRef))
+        trans_prob = sum(self.cch['cch_hit'][mask] / sum(self.z1) -
+                         self.cch['cch_miss'][mask] / sum(self.z0))
         return trans_prob
 
     @property
@@ -105,8 +114,8 @@ class IV:
             return getattr(self, '_cch')
         binsize = 1.
         limit = np.ceil(self.latency + self.winsize) * 2
-        stim_hit = self.stim_times[self.Stim]
-        stim_miss = self.stim_times[self.StimRef]
+        stim_hit = self.stim_times[self.z1]
+        stim_miss = self.stim_times[self.z0]
         cch_hit, bins = correlogram(
             stim_hit, self.target,
             binsize=binsize, limit=limit, density=False)
@@ -152,7 +161,7 @@ class IV:
 
     @property
     def hit_rate(self):
-        return sum(self.Stim) / len(self.Stim)
+        return sum(self.z1) / len(self.z1)
 
     def trials(self, node):
         assert node in ['source', 'target']

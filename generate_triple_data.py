@@ -35,24 +35,29 @@ par = {
     # Stimulation parameters
     'stim_amp_A'      : 10.0, # pA
     'stim_amp_B'      : 10.0, # pA
-    'stim_period'     : 30.0, # ms
-    'stim_max_period' : 60.0, # only applies to poisson
+    'stim_rate'       : 30.0, # ms
     'stim_duration'   : 2.0, # ms
-    'stim_N'          : 30000,
+    'stim_rate'       : 30,
+    'stop_time'       : 500, # s
+    'stim_isi_min'    : 30e-3,
     'stim_dist'       : 'poisson'
 }
 
 
-def poisson_clipped(N, period, low, high):
-    poisson = []
-    while len(poisson) < N:
-        p = - np.log(1 - np.random.uniform(0, 1)) * period
-        if p >= low and p <= high:
-            poisson.append(p)
-    stim_times = [poisson[0]]
-    for idx, isi in enumerate(poisson[1:]):
-        stim_times.append(stim_times[idx] + isi)
-    return np.array(stim_times).round()
+def prune(a, ref):
+    b = np.concatenate(([False], np.diff(a) < ref))
+    c = np.concatenate(([False], np.diff(b.astype(int)) > 0))
+    d = a[~c]
+    if any(np.diff(a) < ref):
+        d = prune(d, ref)
+    return d
+
+
+def generate_stim_times(stim_rate, stop_time, stim_isi_min):
+    stim_times = np.sort(np.random.uniform(
+        0, stop_time, int(stim_rate * stop_time)))
+    return prune(stim_times, stim_isi_min)
+    return stim_times
 
 
 def simulate(par, **kwargs):
@@ -61,13 +66,13 @@ def simulate(par, **kwargs):
         assert all(k in par for k in kwargs.keys())
         par.update(kwargs)
     if par['stim_dist'] is None:
-        stim_times = np.linspace(par['stim_period'],
-                                 par['stim_N'] * par['stim_period'],
-                                 par['stim_N'])
+        stim_times = np.linspace(
+            par['stim_period'], par['stim_N'] * par['stim_period'],
+            par['stim_N'])
     elif par['stim_dist'] == 'poisson':
-        stim_times = poisson_clipped(
-                N=par['stim_N'], period=par['stim_period'],
-                low=par['stim_period'], high=par['stim_max_period'])
+        stim_times = generate_stim_times(
+            par['stim_rate'], par['stop_time'], par['stim_isi_min']) * 1000
+        stim_times = stim_times.round(1) # round to simulation resolution
     print('simulating ', stim_times[-1])
     print('stimulating ', len(stim_times))
     # Set kernel
