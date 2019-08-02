@@ -1,5 +1,5 @@
 import numpy as np
-from method import IV
+from causal_optoconnectics import causal_connectivity
 import nest
 import pandas as pd
 import quantities as pq
@@ -32,32 +32,6 @@ def hasattrs(o, *args):
         return False
 
 
-def LambertWm1(x):
-    import nest
-    nest.sli_push(x)
-    nest.sli_run('LambertWm1')
-    y = nest.sli_pop()
-    return y
-
-
-def PSPnorm(tau_m, C_m, tau_syn):
-    a = (tau_m / tau_syn)
-    b = (1.0 / tau_syn - 1.0 / tau_m)
-
-    # time of maximum
-    t_max = 1.0 / b * (-LambertWm1(-np.exp(-1.0 / a) / a) - 1.0 / a)
-    # maximum of PSP for current of unit amplitude
-    return (np.exp(1.0) / (tau_syn * C_m * b) *
-            ((np.exp(-t_max / tau_m) - np.exp(-t_max / tau_syn)) / b -
-             t_max * np.exp(-t_max / tau_syn)))
-
-def rtrim(val, trim):
-    if not val.endswith(trim):
-        return val
-    else:
-        return val[:len(val) - len(trim)]
-
-
 class NumpyEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, np.ndarray):
@@ -68,16 +42,20 @@ class NumpyEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-def poisson_clipped(N, period, low, high):
-    poisson = []
-    while len(poisson) < N:
-        p = - np.log(1 - np.random.uniform(0, 1)) * period
-        if p >= low and p <= high:
-            poisson.append(p)
-    stim_times = [poisson[0]]
-    for idx, isi in enumerate(poisson[1:]):
-        stim_times.append(stim_times[idx] + isi)
-    return np.array(stim_times).round()
+def prune(a, ref):
+    b = np.concatenate(([False], np.diff(a) < ref))
+    c = np.concatenate(([False], np.diff(b.astype(int)) > 0))
+    d = a[~c]
+    if any(np.diff(a) < ref):
+        d = prune(d, ref)
+    return d
+
+
+def generate_stim_times(stim_rate, stop_time, stim_isi_min):
+    stim_times = np.sort(np.random.uniform(
+        0, stop_time, int(stim_rate * stop_time)))
+    return prune(stim_times, stim_isi_min)
+    return stim_times
 
 
 class Simulator:
@@ -128,30 +106,28 @@ class Simulator:
         nest.SetStatus([0], [{"resolution": self.p['res']}])
 
     def set_neurons(self):
-        self.nodes = nest.Create('iaf_psc_alpha', self.p['N_neurons'])
-        keys = ['t_ref', 'V_m', 'E_L', 'V_reset', 'tau_m', 'C_m', 'V_th',
-                'tau_syn_ex', 'tau_syn_in']
-        nest.SetStatus(self.nodes, [{k: self.p[k] for k in keys}])
+        self.nodes = nest.Create('iaf_cond_alpha', self.p['N_neurons'])
+        keys = [
+              'V_m', #Membrane potential in mV
+              'E_L', #Leak reversal potential in mV.
+              'C_m', #Capacity of the membrane in pF
+              't_ref', #Duration of refractory period in ms.
+              'V_th', #Spike threshold in mV.
+              'V_reset', #Reset potential of the membrane in mV.
+              'E_ex', #Excitatory reversal potential in mV.
+              'E_in', #Inhibitory reversal potential in mV.
+              'g_L', #Leak conductance in nS;
+              'tau_syn_ex', #Rise time of the excitatory synaptic alpha function in ms.
+              'tau_syn_in', #Rise time of the inhibitory synaptic alpha function in ms.
+        ]
         self.nodes_ex = self.nodes[:self.p['N_ex']]
         self.nodes_in = self.nodes[self.p['N_ex']:]
-
-        self.p['J_ex'] = self.p['J'] / PSPnorm(
-            self.p['tau_m'], self.p['C_m'], self.p['tau_syn_ex'])
-        self.p['J_high_ex'] = self.p['J_high'] / PSPnorm(
-            self.p['tau_m'], self.p['C_m'], self.p['tau_syn_ex'])
-        self.p['J_low_ex'] = self.p['J_low'] / PSPnorm(
-            self.p['tau_m'], self.p['C_m'], self.p['tau_syn_ex'])
-
-        # Go negative later on
-        self.p['J_in'] = self.p['g'] * self.p['J'] / PSPnorm(
-            self.p['tau_m'], self.p['C_m'], self.p['tau_syn_in'])
-        self.p['J_high_in'] = self.p['J_high'] / PSPnorm(
-            self.p['tau_m'], self.p['C_m'], self.p['tau_syn_in'])
-        self.p['J_low_in'] = self.p['J_low'] / PSPnorm(
-            self.p['tau_m'], self.p['C_m'], self.p['tau_syn_in'])
-
+        nest.SetStatus(self.nodes_ex, [{k: self.p[k + '_ex'] for k in keys}])
+        nest.SetStatus(self.nodes_in, [{k: self.p[k + '_in'] for k in keys}])
         self.p['C_ex'] = int(self.p['eps'] * self.p['N_ex'])
         self.p['C_in'] = int(self.p['eps'] * self.p['N_in'])
+        self.p['J_ex'] = self.p['J']
+        self.p['J_in'] = self.p['J'] * self.p['g']
 
     def set_connections(self):
 
@@ -173,11 +149,11 @@ class Simulator:
         self.vprint('Connecting excitatory neurons J = ', self.p['J_ex'], 'C = ',
               self.p['C_ex'])
         connect(self.nodes_ex, self.p['J_ex'], self.p['C_ex'],
-                self.p['J_high_ex'], self.p['J_low_ex'])
+                self.p['J_high'], self.p['J_low'])
         self.vprint('Connecting inhibitory neurons J = ', self.p['J_in'], 'C = ',
               self.p['C_in'])
         connect(self.nodes_in, self.p['J_in'], self.p['C_in'],
-                self.p['J_high_in'], self.p['J_low_in'])
+                self.p['J_high'], self.p['J_low'])
         # switch inhibitory neurons
         conns = nest.GetConnections(source=self.nodes_in,
                                     synapse_model='static_synapse')
@@ -185,15 +161,10 @@ class Simulator:
         nest.SetStatus(conns, [{'weight': -1.*val} for val in conn_vals])
 
     def set_background(self):
-        den = (self.p['J_ex'] * self.p['C_ex'] * np.exp(1) * self.p['tau_m'] *
-               self.p['tau_syn_ex'])
-        nu_th = (self.p['V_th'] * self.p['C_m']) / den
-        nu_ex = self.p['eta'] * nu_th
-        self.p['rate_p'] = 1000.0 * nu_ex * self.p['C_ex']
         background = nest.Create("poisson_generator", 1,
                                   params={"rate": self.p['rate_p']})
         nest.Connect(background, self.nodes,
-                     syn_spec={"weight": self.p['J_ex'], "delay": self.p['res']})
+                     syn_spec={"weight": self.p['J_p'], "delay": self.p['res']})
 
     def set_channelnoise(self):
         channelnoise = nest.Create("noise_generator", 1,
@@ -201,35 +172,18 @@ class Simulator:
                                       'std': self.p['gauss_std']})
         nest.Connect(channelnoise, self.nodes)
 
-    def set_pulsepacket(self):
-        simtime = (np.sum(np.diff(self.stim_times)) +
-                   np.min(np.diff(self.stim_times)) +
-                   self.stim_times[0])
-        if self.p['pulse_dist'] == 'poisson':
-            pulses = poisson_clipped(1000, 5, 5, 10)
-            pulses = pulses[pulses < 1500]
-        elif self.p['pulse_dist'] == 'regular':
-            pulses = np.arange(0, simtime, self.p['pulse_period'])
-        elif self.p['pulse_dist'] == 'uniform':
-            pulses = np.sort(np.unique(np.random.uniform(1,1500,10000).round()))
-        else:
-            raise NotImplementedError
-        pulsepacket = nest.Create("pulsepacket_generator", 1,
-                              params={"pulse_times": pulses,
-                                      'sdev': self.p['pulse_std'],
-                                      'activity': self.p['pulse_activity']})
-        nest.Connect(pulsepacket, self.nodes,
-                     syn_spec={"weight": self.p['pulse_J'], "delay": self.p['res']})
-
     def set_stimulation(self):
         if self.p['stim_dist'] is None:
             self.stim_times = np.linspace(
-                self.p['stim_period'], self.p['stim_N'] * self.p['stim_period'],
-                self.p['stim_N'])
+                self.p['stim_rate'],
+                self.p['stop_time'],
+                self.p['stop_time'] / self.p['stim_rate'])
         elif self.p['stim_dist'] == 'poisson':
-            self.stim_times = poisson_clipped(
-                N=self.p['stim_N'], period=self.p['stim_period'],
-                low=self.p['stim_period'], high=self.p['stim_max_period'])
+            stim_times = generate_stim_times(
+                self.p['stim_rate'],
+                self.p['stop_time'],
+                self.p['stim_isi_min']*1e-3) * 1000
+            self.stim_times = stim_times.round(1) # round to simulation resolution
 
     def set_spike_rec(self):
         spks = nest.Create("spike_detector", 2,
@@ -291,8 +245,11 @@ class Simulator:
         N_slice = affected_neurons(z).astype(int)
 
         I = intensity(z)
-        A = hill(self.p['I0'] * I)
-        A = A / A.max()
+        if self.p['I0'] > 0:
+            A = hill(self.p['I0'] * I)
+            A = A / A.max()
+        else:
+            A = np.zeros_like(I)
         idx = 0
         self.stim_amps_ex = {}
         self.stim_amps_in = {}
@@ -351,7 +308,7 @@ class Simulator:
         simtime = (np.sum(np.diff(self.stim_times)) +
                    np.min(np.diff(self.stim_times)) +
                    self.stim_times[0])
-        self.vprint('Simulating {} trials,'.format(self.p['stim_N']) +
+        self.vprint('Simulating {} trials,'.format(len(self.stim_times)) +
               ' total {} ms'.format(simtime))
         tstart = time.time()
         self.simulate_trials(progress_bar=progress_bar)
@@ -393,7 +350,7 @@ class Simulator:
             'connections': pd.DataFrame(conns, columns=conn_include),
             'epoch': {
                 'times': self.stim_times,
-                'durations': [self.p['stim_duration']] * self.p['stim_N']},
+                'durations': [self.p['stim_duration']] * len(self.stim_times)},
             'stim_nodes': {
                 'ex': self.stim_nodes_ex,
                 'in': self.stim_nodes_in},
@@ -477,39 +434,45 @@ if __name__ == '__main__':
     print('Rate ex:', sim.data['params']['rate_ex'])
     print('Rate in:', sim.data['params']['rate_in'])
 
-    set_style('article', w=.4)
+    # set_style('article', w=.4)
     fig, ax = plt.subplots(1, 1)
     conn = sim.data['connections']
     conn.weight.hist(bins=100)
     plt.grid(False)
     despine(ax=fig.gca())
     plt.xlabel('Synaptic weight [pA]')
-    plt.xticks([-1, -.5, 0, .5, 1])
+    # plt.xticks([-1, -.5, 0, .5, 1])
     fig.savefig(sim.p['fname'] + '_syn_dist.pdf', bbox_inches='tight')
 
-    # senders = sim.data['spiketrains']['ex']['senders']
-    # times = sim.data['spiketrains']['ex']['times']
-    # stim_times = sim.data['epoch']['times']
-    # sender_ids = np.unique(senders)
-    #
-    # spiketrains = {sender: times[sender==senders]
-    #                for sender in sender_ids}
-    # winsize_iv = 4
-    # latency_iv = 4 # not used
-    # hit_rates = [IV(s1, [], stim_times,  winsize=winsize_iv, latency=latency_iv).hit_rate
-    #              for s1 in spiketrains.values()]
-    #
-    #
-    # fig, ax = plt.subplots(1, 2)
-    # width = 1
-    # bins = np.arange(0, 11, width)
-    # hist, bins = np.histogram(sim.data['stim_amps']['ex'].values(), bins=bins)
+    senders = sim.data['spiketrains']['ex']['senders']
+    times = sim.data['spiketrains']['ex']['times']
+    stim_times = sim.data['epoch']['times']
+    sender_ids = np.unique(senders)
+
+    spiketrains = {sender: times[sender==senders]
+                   for sender in sender_ids}
+    from causal_optoconnectics.core import hit_rate
+    mu = 2
+    sigma = 2 # not used
+    hit_rates = [hit_rate(s1, stim_times,  mu=mu, sigma=sigma)
+                 for s1 in spiketrains.values()]
+
+
+    fig, ax = plt.subplots(1, 2)
+
+    amps = np.array(list(sim.data['stim_amps']['ex'].values()))
+    width = .1
+    bins = np.arange(0, amps.max(), width)
+    hist, bins = np.histogram(amps, bins=bins)
     # print(bins)
     # print(hist, sum(hist))
-    # ax[0].bar(bins[1:], hist, align='edge', width=-width)
-    #
-    # width = .1
-    # bins = np.arange(0, 1+width, width)
-    # hist, bins = np.histogram(hit_rates, bins=bins)
-    # plt.bar(bins[1:], hist, align='edge', width=-width)
-    # fig.savefig(sim.p['fname'] + '_stim_distribution.png')
+    ax[0].bar(bins[1:], hist, align='edge', width=-width)
+    ax[0].set_xlabel('Stim amps')
+
+    width = .1
+    bins = np.arange(0, 1+width, width)
+    hist, bins = np.histogram(hit_rates, bins=bins)
+    ax[1].bar(bins[1:], hist, align='edge', width=-width)
+    ax[1].set_xlabel('Hit rate')
+
+    fig.savefig(sim.p['fname'] + '_stim_distribution.png')

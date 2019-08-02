@@ -35,9 +35,8 @@ par = {
     # Stimulation parameters
     'stim_amp_A'      : 10.0, # pA
     'stim_amp_B'      : 10.0, # pA
-    'stim_rate'       : 30.0, # ms
+    'stim_rate'       : 30.0, # Hz
     'stim_duration'   : 2.0, # ms
-    'stim_rate'       : 30,
     'stop_time'       : 500, # s
     'stim_isi_min'    : 30e-3,
     'stim_dist'       : 'poisson'

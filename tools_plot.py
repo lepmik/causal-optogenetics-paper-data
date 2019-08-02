@@ -6,6 +6,7 @@ import quantities as pq
 from tools_analysis import make_spiketrain_trials
 import neo
 import os.path as op
+from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
 
 
 def fix_figure(padLegend=None, padHeight=0):
@@ -529,3 +530,145 @@ def plot_xcorr(spike_trains, colors=None, edgecolors=None, fig=None,
     if ylim is not None: axs[0].set_ylim(ylim)
     plt.tight_layout()
     return ccgs, bins, axs
+
+
+def post_stim_spikes(x, stim_times, mu, sigma):
+    """Makes binary classification of response in windows"""
+    stim_times = stim_times.astype(float)
+
+    src_x = np.searchsorted(x, stim_times, side='right')
+
+    # remove_idxs, = np.where((src_x==len(x)) | (src_x==0))
+    # src_x = np.delete(src_x, remove_idxs)
+    # stim_times = np.delete(stim_times, remove_idxs)
+    X = x[src_x] - stim_times
+    return ((X > mu - sigma) & (X < mu + sigma)).astype(int)
+
+
+class response_plotter:
+    def __init__(self, source, target, stim_times, x_mu, x_sigma, y_mu, y_sigma):
+        '''
+        Parameters
+        ----------
+        source : array
+            putative sender neuron
+        target : array
+            putative receiver neuron
+        stim_times : array
+            stimulation times
+        x_mu : float
+            Average stimulus response time for upstream spikes (y)
+        y_sigma : float
+            Standard deviation of upstream stimulus response times.
+        y_mu : float
+            Average stimulus response time for downstream spikes (y)
+        y_sigma : float
+            Standard deviation of downstream stimulus response times.
+        '''
+        self.x_mu = x_mu
+        self.x_sigma = x_sigma
+        self.y_mu = y_mu
+        self.y_sigma = y_sigma
+        self.period = np.min(np.diff(stim_times))
+        self.stim_times = stim_times
+        self.source = source
+        self.target = target
+        self.responses = post_stim_spikes(source, stim_times, x_mu, x_sigma)
+        self.z0 = self.responses == 0
+        self.z1 = self.responses == 1
+
+
+    def trials(self, node):
+        assert node in ['source', 'target']
+        if not hasattr(self, '_trials_' + node):
+            sptr = getattr(self, node)
+            result = [
+                sptr[(sptr > t) & (sptr  <= t + self.period)] - t
+                for t in self.stim_times]
+            setattr(self, '_trials_' + node, result)
+        return getattr(self, '_trials_' + node)
+
+    def plot(self, node, idxs=None, gs=None, **kwargs):
+        binsize = 1e-3
+        bins = np.arange(0, self.period + binsize, binsize)
+        trials = self.trials(node)
+        idxs = np.ones(len(trials)).astype(bool) if idxs is None else idxs
+        assert idxs.dtype == bool
+        assert len(idxs) == len(trials), (len(idxs), len(trials))
+        trials = [t for t, i in zip(trials, idxs) if i]
+        trial_num = np.arange(len(trials))
+        ids = [np.ones(len(t)) * idx for idx, t in zip(trial_num, trials)]
+        times = [t for trial in trials for t in trial]
+        nums = [i for ii in ids for i in ii]
+
+        if gs is None:
+            fig = plt.figure()
+            gs = GridSpec(2, 1, hspace=0.05)
+        else:
+            fig = plt.gcf()
+            gs = GridSpecFromSubplotSpec(2, 1, subplot_spec=gs, hspace=0.05)
+        ax2 = fig.add_subplot(gs[1, 0])
+        ax1 = fig.add_subplot(gs[0, 0], sharex=ax2)
+
+        ax2.scatter(times, nums, color='k', s=1)
+        ax1.hist(times, bins=bins, width=binsize)
+
+        sns.despine()
+        sns.despine(ax=ax1, bottom=True)
+        plt.setp(ax1.get_xticklabels(), visible=False)
+
+        for ax in (ax1, ax2):
+            if node == 'target':
+                ax.axvspan(self.y_mu - self.y_sigma, self.y_mu + self.y_sigma,
+                           color='r', alpha=.5)
+            if node == 'source':
+                ax.axvspan(self.x_mu - self.x_sigma, self.x_mu + self.x_sigma,
+                           color='cyan', alpha=.5)
+        return ax1, ax2
+
+
+def regplot(x, y, data, model=None, ci=95., scatter_color=None, model_color='k', ax=None,
+            scatter_kws={}, regplot_kws={}, cmap=None, cax=None, clabel=None,
+            xlabel=True, ylabel=True, colorbar=False, **kwargs):
+    if model is None:
+        import statsmodels.api as sm
+        model = sm.OLS
+    from seaborn import utils
+    from seaborn import algorithms as algo
+    if ax is None:
+        fig, ax = plt.subplots()
+    _x = data[x]
+    _y = data[y]
+    grid = np.linspace(_x.min(), _x.max(), 100)
+
+    X = np.c_[np.ones(len(_x)), _x]
+    G = np.c_[np.ones(len(grid)), grid]
+
+    results = model(_y, X, **kwargs).fit()
+
+    def reg_func(xx, yy):
+        yhat = model(yy, xx, **kwargs).fit().predict(G)
+        return yhat
+    yhat = results.predict(G)
+    yhat_boots = algo.bootstrap(
+        X, _y, func=reg_func, n_boot=1000, units=None)
+    err_bands = utils.ci(yhat_boots, ci, axis=0)
+    ax.plot(grid, yhat, color=model_color, **regplot_kws)
+    sc = ax.scatter(_x, _y, c=scatter_color, **scatter_kws)
+    ax.fill_between(grid, *err_bands, facecolor=model_color, alpha=.15)
+    if colorbar:
+        cb = plt.colorbar(mappable=sc, cax=cax, ax=ax)
+        cb.ax.yaxis.set_ticks_position('right')
+        if clabel: cb.set_label(clabel)
+
+    if xlabel:
+        if isinstance(xlabel, str):
+            ax.set_xlabel(xlabel)
+        else:
+            ax.set_xlabel(x)
+    if ylabel:
+        if isinstance(ylabel, str):
+            ax.set_ylabel(ylabel)
+        else:
+            ax.set_ylabel(y)
+    return results

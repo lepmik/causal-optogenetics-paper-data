@@ -10,16 +10,30 @@ parameters = {
     'N_rec_state_in'  : None,
     'res'             : 0.1, # Temporal resolution for simulation Delta t in ms
     'delay'           : 1.5, # Synaptic delay in ms
-    # Neuron parameters
-    't_ref'           : 2.0, # Duration of refractory period in ms
-    'V_m'             : 0.0, # Membrane potential, initial condition in mV
-    'E_L'             : 0.0, # Leak reversal potential in mV
-    'V_reset'         : 0.0, # Reset potential of the membrane in mV
-    'tau_m'           : 20.0, # Membrane timeconstant in ms
-    'C_m'             : 1.0, # Capacity of the membrane in pF
-    'V_th'            : 20.0, # Spike threshold in mV
-    'tau_syn_ex'      : 1., # Time constants of the excitatory synaptic exponential function in ms
-    'tau_syn_in'      : 1., # Time constants of the inhibitory synaptic exponential function in ms
+    # Neuron parameters excitatory
+    't_ref_ex'           : 2.0, # Duration of refractory period in ms
+    'V_m_ex'             : 0.0, # Membrane potential, initial condition in mV
+    'E_L_ex'             : 0.0, # Leak reversal potential in mV
+    'V_reset_ex'         : 0.0, # Reset potential of the membrane in mV
+    'tau_m_ex'           : 20.0, # Membrane timeconstant in ms
+    'C_m_ex'             : 1.0, # Capacity of the membrane in pF
+    'V_th_ex'            : 20.0, # Spike threshold in mV
+    'tau_syn_ex_ex'      : 1., # Time constants of the excitatory synaptic exponential function in ms
+    'tau_syn_in_ex'      : 1., # Time constants of the inhibitory synaptic exponential function in ms
+    'E_ex_ex': 0, #Excitatory reversal potential in mV.
+    'E_in_ex': -70, #Inhibitory reversal potential in mV.
+    # Neuron parameters inhibitory
+    't_ref_in'           : 2.0, # Duration of refractory period in ms
+    'V_m_in'             : 0.0, # Membrane potential, initial condition in mV
+    'E_L_in'             : 0.0, # Leak reversal potential in mV
+    'V_reset_in'         : 0.0, # Reset potential of the membrane in mV
+    'tau_m_in'           : 20.0, # Membrane timeconstant in ms
+    'C_m_in'             : 1.0, # Capacity of the membrane in pF
+    'V_th_in'            : 20.0, # Spike threshold in mV
+    'tau_syn_ex_in'      : 1., # Time constants of the excitatory synaptic exponential function in ms
+    'tau_syn_in_in'      : 1., # Time constants of the inhibitory synaptic exponential function in ms
+    'E_ex_in': 0, #Excitatory reversal potential in mV.
+    'E_in_in': -70, #Inhibitory reversal potential in mV.
     # Connection parameters
     'eta'             : .9, # external poisson rate in Hz
     'J'               : .2, # mV
@@ -34,10 +48,9 @@ parameters = {
     'stim_dist'       : 'poisson',
     'stim_amp_ex'     : 8.0, # pA
     'stim_amp_in'     : 0.0, # pA
-    'stim_period'     : 100.0, # ms
-    'stim_max_period' : 150, # only applies to poisson
+    'stim_isi_min'    : 100.0, # ms
     'stim_duration'   : 2.0, # ms
-    'stim_N'          : 30000,
+    'stop_time'       : 2000, # s
     # Optogenetics
     'I0': 10, # light intensity leaving fibre mW/mm2
     'r': 100e-3, # 100 um radius of fiber
