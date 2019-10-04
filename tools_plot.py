@@ -538,11 +538,11 @@ def post_stim_spikes(x, stim_times, mu, sigma):
 
     src_x = np.searchsorted(x, stim_times, side='right')
 
-    # remove_idxs, = np.where((src_x==len(x)) | (src_x==0))
-    # src_x = np.delete(src_x, remove_idxs)
-    # stim_times = np.delete(stim_times, remove_idxs)
+    remove_idxs, = np.where((src_x==len(x)) | (src_x==0))
+    src_x = np.delete(src_x, remove_idxs)
+    stim_times = np.delete(stim_times, remove_idxs)
     X = x[src_x] - stim_times
-    return ((X > mu - sigma) & (X < mu + sigma)).astype(int)
+    return ((X > mu - sigma) & (X < mu + sigma)).astype(int), stim_times
 
 
 class response_plotter:
@@ -570,10 +570,9 @@ class response_plotter:
         self.y_mu = y_mu
         self.y_sigma = y_sigma
         self.period = np.min(np.diff(stim_times))
-        self.stim_times = stim_times
         self.source = source
         self.target = target
-        self.responses = post_stim_spikes(source, stim_times, x_mu, x_sigma)
+        self.responses, self.stim_times = post_stim_spikes(source, stim_times, x_mu, x_sigma)
         self.z0 = self.responses == 0
         self.z1 = self.responses == 1
 
