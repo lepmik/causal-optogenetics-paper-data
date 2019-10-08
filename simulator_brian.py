@@ -195,40 +195,22 @@ class Simulator:
         self.p['C_p'] = int(self.p['eps_p'] * self.p['N_neurons'])
         self.vprint('Connecting background rate = ', self.p['rate_p'], 'C = ',
               self.p['C_p'])
-        background = nest.Create(
-            "poisson_generator", 1,
-             params={"rate": self.p['rate_p'] * self.p['C_p']})
-        nest.Connect(
-            background, self.nodes,
-            {'rule': 'all_to_all'},
-            {"weight": self.p['J_ex'],  "delay": self.p['delay']})
+        self.poissInp = brian2.PoissonInput(
+            self.nodes, 'ge',
+            N=self.p['N_neurons'],
+            rate=self.p['rate_p'] * self.p['C_p'],
+            weight=self.p['J_ex'] * nS)
 
     def set_spike_rec(self):
-        spks = nest.Create("spike_detector", 2,
-                         params=[{"label": "ex", "to_file": True},
-                                 {"label": "in", "to_file": True}])
-        # connect using all_to_all: all recorded excitatory neurons to one detector
-        self.spikes_ex, self.spikes_in = spks[:1], spks[1:]
-        N_rec_ex = self.p.get('N_rec_spike_ex') or self.p['N_ex']
-        N_rec_in = self.p.get('N_rec_spike_in') or self.p['N_in']
-        nest.Connect(self.nodes_ex[:N_rec_ex], self.spikes_ex)
-        nest.Connect(self.nodes_in[:N_rec_in], self.spikes_in)
+        self.spk_mon_ex = brian2.SpikeMonitor(self.nodes_ex)
+        self.spk_mon_in = brian2.SpikeMonitor(self.nodes_in)        
 
     def set_state_rec(self):
-        sampling_period = self.p.get('sampling_period') or self.p['res']
-        N_rec_ex = self.p.get('N_rec_state_ex') or self.p['N_ex']
-        N_rec_in = self.p.get('N_rec_state_in') or self.p['N_in']
-        def connect(nodes, label, N_rec):
-            vm = nest.Create("multimeter",
-                params = {"interval": sampling_period,
-                          "record_from": ['V_m', 'g_ex', 'g_in'],
-                          "withgid": True, "to_file": True,
-                          "label": label, "withtime": True})
-            nest.Connect(vm, nodes[:N_rec])
-            return vm
-        self.vm_ex = connect(self.nodes_ex, "exc_v", N_rec_ex)
-        self.vm_in = connect(self.nodes_in, "inh_v", N_rec_in)
-
+        self.evnt_mon = brian2.EventMonitor(
+            self.nodes,
+            'spike',
+            variables=['V_m', 'ge', 'gi'])
+    
     def simulate_trials(self, progress_bar=False):
         if progress_bar:
             if not callable(progress_bar):
@@ -361,8 +343,8 @@ class Simulator:
 #        self.set_kernel()
         self.vprint('Setting neurons')
         self.set_neurons()
-#        self.vprint('Setting background')
-#        self.set_background()
+        self.vprint('Setting background')
+        self.set_background()
         self.vprint('Setting connections')
         self.set_connections()
         self.vprint('Setting spike recording')
