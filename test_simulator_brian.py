@@ -19,4 +19,5 @@ def test_record_state_variables():
     sim.set_background()
     sim.set_connections()
     sim.set_spike_rec()
+    #
     sim.set_state_rec()
