@@ -1,11 +1,11 @@
-from brian2 import ms, second, Hz, mV, pA, nS, pF
+from brian2 import ms, Hz, mV, nS, pF
 
 parameters = {
     'msd'             : 1234, # Master seed
-    'num_threads'     : 8,
-    'N_neurons'       : 4000,
-    'N_ex'            : 3200,
-    'N_in'            : 800,
+    'num_threads'     : 24,
+    'N_neurons'       : 400,
+    'N_ex'            : 320,
+    'N_in'            : 80,
     'N_rec_spike_ex'  : None,
     'N_rec_spike_in'  : None,
     'N_rec_state_ex'  : None,
@@ -14,10 +14,10 @@ parameters = {
     'syn_delay'       : 1.5*ms, # Synaptic delay in ms
     # Neuron parameters
     't_ref'           : 4.0*ms, # Duration of refractory period in ms
-    'V_m'             : -70.0*mV, # Membrane potential, initial condition in mV
+    'V_m_init'        : -70.0*mV, # Membrane potential, initial condition in mV
     'E_L'             : -70.0*mV, # Leak reversal potential in mV
     'V_reset'         : -70.0*mV, # Reset potential of the membrane in mV
-    'g_L'             : 16.7, # Membrane leak
+    'g_L'             : 16.7*nS, # Membrane leak
     'C_m'             : 250.0*pF, # Capacity of the membrane in pF
     'V_th'            : -50.0*mV, # Spike threshold in mV
     'tau_syn_ex'      : 0.326*ms, # Time constants of the excitatory synaptic exponential function in ms
@@ -25,10 +25,10 @@ parameters = {
     'E_ex'            : 0.*mV, #Excitatory reversal potential in mV.
     'E_in'            : -80.*mV, #Inhibitory reversal potential in mV.
     # Connection parameters
-    'rate_p'          : 25.5, # external poisson rate
+    'rate_p'          : 25.5*Hz, # external poisson rate
     # 'eps_p'           : 0.25, # poisson rate = rate_p * C_p, C_p = eps_p * N_neurons
     'eps_p'           : 0.1, # poisson rate = rate_p * C_p, C_p = eps_p * N_neurons
-    'J_ex'            : .68, #
+    'J_ex'            : .68 *nS, #
     'g'               : 2.7, #
     'eps'            : 0.1, # connection prob
     'J_high'         : 5., # max connection strength (0.05 ~ 5 mV)
