@@ -1,11 +1,11 @@
-from brian2 import ms, Hz, mV, nS, pF
+from brian2 import ms, Hz, mV, nS, pF, pA
 
 parameters = {
     'msd'             : 1234, # Master seed
     'num_threads'     : 24,
-    'N_neurons'       : 400,
-    'N_ex'            : 320,
-    'N_in'            : 80,
+    'N_neurons'       : 4000,
+    'N_ex'            : 3200,
+    'N_in'            : 800,
     'N_rec_spike_ex'  : None,
     'N_rec_spike_in'  : None,
     'N_rec_state_ex'  : None,
@@ -25,30 +25,32 @@ parameters = {
     'E_ex'            : 0.*mV, #Excitatory reversal potential in mV.
     'E_in'            : -80.*mV, #Inhibitory reversal potential in mV.
     # Connection parameters
-    'rate_p'          : 25.5*Hz, # external poisson rate
+#    'rate_p'          : 25.5*Hz, # external poisson rate
+    'rate_p'          : 1. * Hz, # external poisson rate
+    'N_p'             : 38000, # number of poisson inputs to each neuron
     # 'eps_p'           : 0.25, # poisson rate = rate_p * C_p, C_p = eps_p * N_neurons
     'eps_p'           : 0.1, # poisson rate = rate_p * C_p, C_p = eps_p * N_neurons
     'J_ex'            : .68 *nS, #
     'g'               : 2.7, #
+#    'g'               : 10., #    
     'eps'            : 0.1, # connection prob
     'J_high'         : 5., # max connection strength (0.05 ~ 5 mV)
     'J_low'          : 0.0,
     'p_var'          : 0.1, # percentage variation of mean in lognormal dist
     # Stimulation parameters
     # 'stim_N_ex'       : 7000,
-    'stim_N_ex'       : 2000,
-    'stim_N_in'       : 0,
+#    'stim_N_ex'       : 2000,
+    'stim_N_ex'       : 1000,    
     #'stim_dist'       : 'poisson',
-    'stim_amp_ex'     : 900.0, # pA
+    'stim_amp_ex'     : 900.0 * pA, # pA
     'stim_amp_in'     : 0.0, # pA
     #'stim_rate'       : 30.0,
     #'stim_isi_min'    : 200.0, # ms
-    'stim_duration'   : 2.0, # ms
+    'stim_duration'   : 2.0*ms, # ms
+    'simtime_stim' : 4.0*ms, # ms    
     #'stop_time'       : 16000, #s
-    'n_trials'        : 4,
-    'init_simtime'    : 600., #ms
-    'simtime'         : 20, #ms
-    'delay'           : 20, #ms
+    'init_simtime'    : 500.* ms, #ms
+    'runtime'         : 1000000*ms, #ms
     # Optogenetics
     'I0': 10, # light intensity leaving fibre mW/mm2 DONT ADJUST, USE stim_amp_ex
     'r': 100e-3, # 100 um radius of fiber
