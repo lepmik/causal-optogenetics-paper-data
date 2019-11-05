@@ -43,14 +43,12 @@ def savefig(fig, fname, ext='.svg', **kwargs):
 
 
 def despine(ax=None, left=False, right=True, top=True, bottom=False,
-            xticks=True, yticks=True, all_sides=False):
+            xticks=True, yticks=True):
     """
     Removes axis lines
     """
-    if all_sides:
-        left, right, top, bottom = [True] * 4
     if ax is None:
-        ax = plt.gca()
+        ax = plt.gcf().get_axes()
     if not isinstance(ax, (list, tuple)):
         ax = [ax]
     for a in ax:
@@ -59,16 +57,17 @@ def despine(ax=None, left=False, right=True, top=True, bottom=False,
             a.spines['right'].set_visible(not right)
             a.spines['left'].set_visible(not left)
             a.spines['bottom'].set_visible(not bottom)
-        except AttributeError:
-            raise
-        except:
-            raise
+        except KeyError:
+            pass
+
+        a.get_xaxis().tick_bottom()
+        plt.setp(a.get_xticklabels(), visible=xticks)
         if not xticks:
-            a.get_xaxis().tick_bottom()
-            plt.setp(a.get_xticklabels(), visible=False)
+            a.xaxis.set_ticks_position('none')
+        a.get_yaxis().tick_left()
+        plt.setp(a.get_yticklabels(), visible=yticks)
         if not yticks:
-            a.get_yaxis().tick_left()
-            plt.setp(a.get_yticklabels(), visible=False)
+            a.yaxis.set_ticks_position('none')
 
 
 def set_style(style='article', sns_style='white', w=1, h=1):
