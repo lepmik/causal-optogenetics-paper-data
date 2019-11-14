@@ -1,10 +1,11 @@
 import os
 from tools import create_connection_matrix
 import imp
-import pickle as pkl
 import pdb
 import sys
 import time
+import numpy as np
+import brian2 as br2
 
 # Load parameters
 data_path = '/home/jovyan/work/instrumentalVariable/data_branched_stim/'
@@ -25,7 +26,7 @@ p['J_in'] = p['g'] * d / n
 # create network layout
 m = create_connection_matrix(p, p['msd'])
 # store it
-np.savez(str(data_path)+'/'+'m.pkl', data=m)
+np.savez(str(data_path)+'/'+'m.npz', m=m/br2.nS)
 
 for i in range(p['num_threads']):
     seed_i = i

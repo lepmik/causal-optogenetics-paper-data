@@ -1,11 +1,8 @@
 import os
 import imp
 import numpy as np
-import pickle as pkl
 from brian2 import *
-import pdb
 import sys
-import pandas as pd
 
 if len(sys.argv) not in [2, 3, 4]:
     raise IOError('Usage: "python script.py seed data_path param_module"')
@@ -21,6 +18,10 @@ f, p, d = imp.find_module(jobname, [currdir])
 p = imp.load_module(jobname, f, p, d).parameters
 
 logging.file_log = False
+
+
+# set global seed
+seed(seed_i)
 
 # %%
 '''
@@ -57,8 +58,7 @@ nodes_in = nodes[p['N_ex']:]
 nodes_ex_stim = nodes_ex[:p['stim_N_ex']]
 
 # Load connections from matrix
-with open(str(data_path)+'m.pkl', 'rb') as f:
-    m = pkl.load(f)
+m = np.load(str(data_path)+'m.npz')['m']*nS
 
 # %%
 syn_ex = Synapses(
@@ -164,9 +164,9 @@ while defaultclock.t < p['runtime']:
         # get timepoint of branching, shift by the delay of 0.1 ms
         t2 = defaultclock.t/ms - 0.1
 
-        # store spikes every nth trial        
+        # store spikes every nth trial
         if cnt % p['n_save_spikes'] == 0:
-            t1, i1 = np.array(spk_mon1.t), np.array(spk_mon1.i)
+            t1, i1 = np.array(spk_mon1.t)/ms, np.array(spk_mon1.i).astype(int)
             data = {
                 't': defaultclock.t/ms,
                 'spk_ids': t1,
@@ -212,7 +212,7 @@ while defaultclock.t < p['runtime']:
         sys.stdout.write('\r'+str(seed_i)+': '+str(defaultclock.t/ms))
     run(p['runtime'] - defaultclock.t)
 
-    t1, i1 = np.array(spk_mon1.t), np.array(spk_mon1.i)
+    t1, i1 = np.array(spk_mon1.t)/ms, np.array(spk_mon1.i).astype(int)
     data = {
         't': defaultclock.t/ms,
         'spk_ids': t1,
