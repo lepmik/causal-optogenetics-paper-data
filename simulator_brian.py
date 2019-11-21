@@ -8,8 +8,6 @@ import copy
 import brian2 as br2
 import pdb
 import pickle as pkl
-import elephant
-import quantities as pq
 
 try:
     from tqdm import tqdm
@@ -83,7 +81,7 @@ def create_connection_matrix(p, seed=None):
     J_in = p['J_in']/br2.nS
     J_high = p['J_high']/br2.nS
     J_low = p['J_low']/br2.nS
-    
+
     # initialize connection matrix
     n_nrns = p['N_ex']+p['N_in']
     m = np.zeros((n_nrns, n_nrns))

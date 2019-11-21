@@ -142,9 +142,6 @@ run(p['init_simtime'])
 sys.stdout.write('\r'+str(defaultclock.t/ms))
 t2 = defaultclock.t/ms
 
-# store spikes
-t1, i1 = np.array(spk_mon1.t), np.array(spk_mon1.i)
-
 # now with stimulation
 stop_for_spikes.active = True
 
@@ -164,13 +161,13 @@ while defaultclock.t < p['runtime']:
         # get timepoint of branching, shift by the delay of 0.1 ms
         t2 = defaultclock.t/ms - 0.1
 
-        # store spikes every nth trial
+        # store spikes of baseline simulation every nth trial
         if cnt % p['n_save_spikes'] == 0:
-            t1, i1 = np.array(spk_mon1.t)/ms, np.array(spk_mon1.i).astype(int)
+            t1, i1 = np.array(spk_mon1.t/ms), np.array(spk_mon1.i).astype(int)
             data = {
                 't': defaultclock.t/ms,
-                'spk_ids': t1,
-                'spk_ts': i1}
+                'spk_ids': i1,
+                'spk_ts': t1}
             np.savez(data_path_i + 'spks1.npz', data=data)    
 
         # store network state before stimulation
@@ -212,11 +209,11 @@ while defaultclock.t < p['runtime']:
         sys.stdout.write('\r'+str(seed_i)+': '+str(defaultclock.t/ms))
     run(p['runtime'] - defaultclock.t)
 
-    t1, i1 = np.array(spk_mon1.t)/ms, np.array(spk_mon1.i).astype(int)
+    t1, i1 = np.array(spk_mon1.t/ms), np.array(spk_mon1.i).astype(int)
     data = {
         't': defaultclock.t/ms,
-        'spk_ids': t1,
-        'spk_ts': i1}
+        'spk_ids': i1,
+        'spk_ts': t1}
     np.savez(data_path_i + 'spks1.npz', data=data)    
 
 

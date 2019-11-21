@@ -36,8 +36,8 @@ parameters = {
     'g'               : 2.7, #
 #    'g'               : 10., #    
     'eps'            : 0.1, # connection prob
-    'J_high'         : 5., # max connection strength (0.05 ~ 5 mV)
-    'J_low'          : 0.0,
+    'J_high'         : 5.*nS, # max connection strength (0.05 ~ 5 mV)
+    'J_low'          : 0.0*nS,
     'p_var'          : 0.1, # percentage variation of mean in lognormal dist
     # Stimulation parameters
     # 'stim_N_ex'       : 7000,
@@ -52,7 +52,7 @@ parameters = {
     'simtime_stim' : 4.0*ms, # ms    
     #'stop_time'       : 16000, #s
     'init_simtime'    : 500.* ms, #ms
-    'runtime'         : 1000.*ms, #ms
+    'runtime'         : 520.*ms, #ms
     't_dist_min'      : 4.*ms, # minimal distance between stimulations
     't_dist_max'      : 10.*ms, # maximal distance between stimulations
     # Optogenetics

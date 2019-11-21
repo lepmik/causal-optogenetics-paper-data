@@ -26,7 +26,7 @@ p['J_in'] = p['g'] * d / n
 # create network layout
 m = create_connection_matrix(p, p['msd'])
 # store it
-np.savez(str(data_path)+'/'+'m.npz', m=m/br2.nS)
+np.savez(str(data_path)+'m.npz', m=m/br2.nS)
 
 for i in range(p['num_threads']):
     seed_i = i

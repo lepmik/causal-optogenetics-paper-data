@@ -24,22 +24,22 @@ parameters = {
     # Connection parameters
     'rate_p'          : 1. * Hz, # external poisson rate
     'N_p'             : 27500, # number of poisson inputs to each neuron
-    's_sin'          : 100 * pA, # size of sinusoidal fluctuations
-    'r_sin'          : 10 * Hz, # rate of sinusoidal fluctuations    
+    's_sin'           : 100 * pA, # size of sinusoidal fluctuations
+    'r_sin'           : 10 * Hz, # rate of sinusoidal fluctuations    
     'eps_p'           : 0.1, # poisson rate = rate_p * C_p, C_p = eps_p * N_neurons
     'J_ex'            : .68 *nS, #
     'g'               : 2.7, #
-    'eps'            : 0.1, # connection prob
-    'J_high'         : 5.*nS, # max connection strength (0.05 ~ 5 mV)
-    'J_low'          : 0.0*nS,
-    'p_var'          : 0.1, # percentage variation of mean in lognormal dist
+    'eps'             : 0.1, # connection prob
+    'J_high'          : 5.*nS, # max connection strength (0.05 ~ 5 mV)
+    'J_low'           : 0.0*nS,
+    'p_var'           : 0.1, # percentage variation of mean in lognormal dist
     # Stimulation parameters
     'stim_N_ex'       : 1000,    
     'stim_amp_ex'     : 900.0 * pA, # pA
     'stim_amp_in'     : 0.0, # pA
     't_pre_stim'      : 2.0*ms, # time before a stimulation
-    't_stim'   : 2.0*ms, # ms
-    't_after_stim' : 4.0*ms, # ms    
+    't_stim'          : 2.0*ms, # ms
+    't_after_stim'    : 10.0*ms, # ms    
     'init_simtime'    : 500.* ms, #ms
     'runtime'         : 1000000.*ms, #ms
     't_dist_min'      : 4.*ms, # minimal distance between stimulations

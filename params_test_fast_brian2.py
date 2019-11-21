@@ -14,7 +14,6 @@ parameters = {
     'syn_delay'       : 1.5*ms, # Synaptic delay in ms
     # Neuron parameters
     't_ref'           : 4.0*ms, # Duration of refractory period in ms
-    'V_m_init'        : -70.0*mV, # Membrane potential, initial condition in mV
     'E_L'             : -70.0*mV, # Leak reversal potential in mV
     'V_reset'         : -70.0*mV, # Reset potential of the membrane in mV
     'g_L'             : 16.7*nS, # Membrane leak
@@ -27,17 +26,17 @@ parameters = {
     # Connection parameters
 #    'rate_p'          : 25.5*Hz, # external poisson rate
     'rate_p'          : 1. * Hz, # external poisson rate
-    'N_p'             : 45000, # number of poisson inputs to each neuron
+    'N_p'             : 35000, # number of poisson inputs to each neuron
     # 'eps_p'           : 0.25, # poisson rate = rate_p * C_p, C_p = eps_p * N_neurons
     'eps_p'           : 0.1, # poisson rate = rate_p * C_p, C_p = eps_p * N_neurons
     'J_ex'            : .68 *nS, #
     'g'               : 2.7, #
 #    'g'               : 10., #    
     'eps'            : 0.1, # connection prob
-    'J_high'         : 5., # max connection strength (0.05 ~ 5 mV)
-    'J_low'          : 0.0,
+    'J_high'         : 5.*nS, # max connection strength (0.05 ~ 5 mV)
+    'J_low'          : 0.0*nS,
     'p_var'          : 0.1, # percentage variation of mean in lognormal dist
-    's_sin'          : 100 * pA, # size of sinusoidal fluctuations
+    's_sin'          : 100. * pA, # size of sinusoidal fluctuations
     'r_sin'          : 10 * Hz, # rate of sinusoidal fluctuations
     # Stimulation parameters
     # 'stim_N_ex'       : 7000,
@@ -52,7 +51,7 @@ parameters = {
     'simtime_stim' : 6.0*ms, # ms    
     #'stop_time'       : 16000, #s
     'init_simtime'    : 10.* ms, #ms
-    'runtime'         : 50.*ms, #ms
+    'runtime'         : 30.*ms, #ms
     't_dist_min'      : 5.*ms, # minimal distance between stimulations
     't_dist_max'      : 10.*ms, # maximal distance between stimulations
     # Optogenetics
