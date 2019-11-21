@@ -84,16 +84,14 @@ def set_style(style='article', sns_style='white', w=1, h=1):
             'text.usetex'    : True
         },
         'notebook': {
-            'figure.figsize' : (16, 9),
-            'axes.labelsize' : 50,
-            'lines.linewidth': 4,
-            'lines.markersize': 20,
-            'xtick.labelsize': 40,
-            'ytick.labelsize': 50,
-            'axes.titlesize' : 20,
-            'font.size'      : 50,
+            'figure.figsize' : (12, 6),
+            'axes.labelsize' : 'xx-large',
+            'lines.linewidth': 2,
+            'xtick.labelsize': 'xx-large',
+            'ytick.labelsize': 'xx-large',
+            'axes.titlesize' : 'xx-large',
             'legend.frameon' : False,
-            'legend.fontsize': 35,
+            'legend.fontsize': 'xx-large',
             'font.family'    : 'serif',
             'text.usetex'    : True
         }

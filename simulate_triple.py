@@ -219,5 +219,21 @@ def simulate(par=None, pbar=None, **kwargs):
     return data
 
 if __name__ == '__main__':
-    dataa = simulate(par, stop_time=4000)
-    np.savez('results/triple_4000.npz', data=dataa)
+    J_ACs = np.arange(0, 7.1, .1)
+    simulations_J_AC = defaultdict(list)
+    for a in tqdm(J_ACs):
+        data = simulate(stop_time=10000, J_AC=a, ac_amp=1., ac_offset=-.5, pbar=lambda x:x)
+        stop_time = data['status']['time']
+        spiketrains = data['spiketrains'].groupby('senders')
+        A_spikes = spiketrains.get_group(1)['times'].to_numpy()
+        B_spikes = spiketrains.get_group(2)['times'].to_numpy()
+        C_spikes = spiketrains.get_group(3)['times'].to_numpy()
+
+        simulations_J_AC['stim_times'].append(data['stim_times'])
+        simulations_J_AC['A_spikes'].append(A_spikes)
+        simulations_J_AC['B_spikes'].append(B_spikes)
+        simulations_J_AC['C_spikes'].append(C_spikes)
+        simulations_J_AC['stop_time'].append(stop_time)
+        simulations_J_AC['J_AC'].append(a)
+
+    np.savez('simulations_J_AC_osc.npz', data=simulations_J_AC)
