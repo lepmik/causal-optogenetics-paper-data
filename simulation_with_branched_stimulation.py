@@ -13,12 +13,11 @@ data_path = sys.argv[2]
 data_path_i = data_path + '/' + str(seed_i) + '/'
 param_module = sys.argv[3]
 jobname = param_module.replace('.py', '')
-currdir = '/home/jovyan/work/instrumentalVariable/causal-optogenetics-paper-data/'
+currdir = '/home/jovyan/work/instrumentalVariable/causal-optogenetics-brian2/'
 f, p, d = imp.find_module(jobname, [currdir])
 p = imp.load_module(jobname, f, p, d).parameters
 
 logging.file_log = False
-
 
 # set global seed
 seed(seed_i)
@@ -116,98 +115,73 @@ spk_mon2.active = False
 ### Simulate
 '''
 
-# %%
-#nodes_ex_stim_i = np.array(nodes_ex_stim.i)
-
-# find last index +1 of stim supgroup
-idx_stop_pl_1 = nodes_ex_stim.stop
-# make sure that stim subgroups starts with 0
-assert nodes_ex_stim.start == 0
-
-
-@network_operation(when='end')
-def stop_for_spikes():
-#    if len(nodes_ex_stim.spikes):
-#    if len(np.in1d(nodes.spikes, nodes_ex_stim_i)):
-    # .spikes is not subgroup specific
-    # therefore we have to manually check whether any of the occuring spikes
-    # is from the subgroup.
-    if len(nodes.spikes) and np.searchsorted(nodes.spikes, idx_stop_pl_1)>0:
-        stop()
 
 # %%
 # run init time without stimulation
-stop_for_spikes.active = False
 run(p['init_simtime'])
 sys.stdout.write('\r'+str(defaultclock.t/ms))
 t2 = defaultclock.t/ms
 
 # now with stimulation
-stop_for_spikes.active = True
 
 # initialize random dealy time between branching points
 t_dist_i = np.random.uniform(p['t_dist_min']/ms, p['t_dist_max']/ms)
-
-run(p['runtime'] - defaultclock.t)
 
 stim_amp = p['stim_amp_ex'] * np.linspace(0., 1., p['stim_N_ex'])
 
 cnt = 0
 
 while defaultclock.t < p['runtime']:
-    if defaultclock.t/ms - t2 > t_dist_i:
-        # stimulation only after init_simtime 
-        stop_for_spikes.active = False
-        # get timepoint of branching, shift by the delay of 0.1 ms
-        t2 = defaultclock.t/ms - 0.1
+    # get timepoint of branching, shift by the delay of 0.1 ms
+    t2 = defaultclock.t/ms - 0.1
 
-        # store spikes of baseline simulation every nth trial
-        if cnt % p['n_save_spikes'] == 0:
-            t1, i1 = np.array(spk_mon1.t/ms), np.array(spk_mon1.i).astype(int)
-            data = {
-                't': defaultclock.t/ms,
-                'spk_ids': i1,
-                'spk_ts': t1}
-            np.savez(data_path_i + 'spks1.npz', data=data)    
-
-        # store network state before stimulation
-        store()
-        # We'll need an explicit seed here, otherwise we'll continue with different
-        # random numbers after the restore
-        use_seed = randint(iinfo(np.int32).max)
-        seed(use_seed)
-        # change spike monitors
-        spk_mon1.active = False
-        spk_mon2.active = True
-        run(p['t_pre_stim'])
-        # stimulate
-        nodes_ex_stim.I = stim_amp
-        run(p['t_stim'])
-        # turn stimuli off, but keep on simulation
-        nodes_ex_stim.I = 0.*pA
-        run(p['t_after_stim'])
-        # store data of intermittent run
-        spk_mon2_t = np.array(spk_mon2.t/ms)
-        spk_mon2_i = np.array(spk_mon2.i).astype(int)
+    # store spikes of baseline simulation every nth trial
+    if cnt % p['n_save_spikes'] == 0:
+        t1, i1 = np.array(spk_mon1.t/ms), np.array(spk_mon1.i).astype(int)
         data = {
-            't': t2,
-            'spk_ids': spk_mon2_i,
-            'spk_ts': spk_mon2_t}
-        np.savez(data_path_i + 'stimulation_data_{}.npz'.format(str(int(t2*10))), data=data)
+            't': defaultclock.t/ms,
+            'spk_ids': i1,
+            'spk_ts': t1}
+        np.savez(data_path_i + 'spks1.npz', data=data)    
 
-        # restore previous network state and continue with simulation
-        stop_for_spikes.active = True
-        restore()
-        seed(use_seed)
-        spk_mon1.active = True
-        spk_mon2.active = False
-        cnt += 1
-        with open(data_path_i + 'log', 'w') as f:
-            f.write("t: " + str(int(defaultclock.t/ms))+ " cnt: " + str(cnt))
-        # generate waiting time
-        t_dist_i = np.random.uniform(p['t_dist_min']/ms, p['t_dist_max']/ms)
-        sys.stdout.write('\r'+str(seed_i)+': '+str(defaultclock.t/ms))
-    run(p['runtime'] - defaultclock.t)
+    # store network state before stimulation
+    store()
+    # We'll need an explicit seed here, otherwise we'll continue with different
+    # random numbers after the restore
+    use_seed = randint(iinfo(np.int32).max)
+    seed(use_seed)
+    # change spike monitors
+    spk_mon1.active = False
+    spk_mon2.active = True
+    run(p['t_pre_stim'])
+    # stimulate
+    nodes_ex_stim.I = stim_amp
+    run(p['t_stim'])
+    # turn stimuli off, but keep on simulation
+    nodes_ex_stim.I = 0.*pA
+    run(p['t_after_stim'])
+    # store data of intermittent run
+    spk_mon2_t = np.array(spk_mon2.t/ms)
+    spk_mon2_i = np.array(spk_mon2.i).astype(int)
+    data = {
+        't': t2,
+        'spk_ids': spk_mon2_i,
+        'spk_ts': spk_mon2_t}
+    np.savez(data_path_i + 'stimulation_data_{}.npz'.format(str(int(t2*10))), data=data)
+
+    # restore previous network state and continue with simulation
+    restore()
+    seed(use_seed)
+    spk_mon1.active = True
+    spk_mon2.active = False
+    cnt += 1
+    with open(data_path_i + 'log', 'w') as f:
+        f.write("t: " + str(int(defaultclock.t/ms))+ " cnt: " + str(cnt))
+    # generate waiting time
+    t_dist_i = np.random.uniform(p['t_dist_min']/ms, p['t_dist_max']/ms)
+    t_dist_i = t_dist_i*ms
+    sys.stdout.write('\r'+str(seed_i)+': '+str(defaultclock.t/ms))
+    run(t_dist_i)
 
     t1, i1 = np.array(spk_mon1.t/ms), np.array(spk_mon1.i).astype(int)
     data = {

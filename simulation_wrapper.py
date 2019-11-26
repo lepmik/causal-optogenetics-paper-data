@@ -12,7 +12,7 @@ data_path = '/home/jovyan/work/instrumentalVariable/data_branched_stim/'
 param_module = 'params_brian2.py'
 os.makedirs(data_path, exist_ok=True)
 jobname = param_module.replace('.py', '')
-currdir = '/home/jovyan/work/instrumentalVariable/causal-optogenetics-paper-data/'
+currdir = '/home/jovyan/work/instrumentalVariable/causal-optogenetics-brian2/'
 f, p, d = imp.find_module(jobname, [currdir])
 p = imp.load_module(jobname, f, p, d).parameters
 
