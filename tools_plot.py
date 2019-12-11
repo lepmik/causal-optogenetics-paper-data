@@ -668,3 +668,30 @@ def regplot(x, y, data, model=None, ci=95., scatter_color=None, model_color='k',
         else:
             ax.set_ylabel(y)
     return results
+
+
+def scatterplot(x, y, data, scatter_color=None, ax=None,
+            cmap=None, cax=None, clabel=None,
+            xlabel=True, ylabel=True, colorbar=False, **kwargs):
+
+    if ax is None:
+        fig, ax = plt.subplots()
+    _x = data[x]
+    _y = data[y]
+
+    sc = ax.scatter(_x, _y, c=scatter_color, **kwargs)
+    if colorbar:
+        cb = plt.colorbar(mappable=sc, cax=cax, ax=ax)
+        cb.ax.yaxis.set_ticks_position('right')
+        if clabel: cb.set_label(clabel)
+
+    if xlabel:
+        if isinstance(xlabel, str):
+            ax.set_xlabel(xlabel)
+        else:
+            ax.set_xlabel(x)
+    if ylabel:
+        if isinstance(ylabel, str):
+            ax.set_ylabel(ylabel)
+        else:
+            ax.set_ylabel(y)
