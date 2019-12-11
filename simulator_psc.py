@@ -193,6 +193,17 @@ class Simulator:
         self.vm_ex = connect(self.nodes_ex, "exc_v", N_rec_ex)
         self.vm_in = connect(self.nodes_in, "inh_v", N_rec_in)
 
+    def set_ac_input(self):
+        # Set confounding drive
+        ac = nest.Create(
+            "ac_generator", 1, params={
+                "offset": self.p['ac_offset'],
+                'amplitude': self.p['ac_amp'],
+                'frequency': self.p['ac_freq']
+            }
+        )
+        nest.Connect(ac, self.nodes)
+
     def simulate_trials(self, progress_bar=False):
         if progress_bar:
             if not callable(progress_bar):
@@ -284,7 +295,8 @@ class Simulator:
         self.vprint('Setting connections')
         # self.set_connections()
         self.set_connections_from_file('params_1_psc_connections.feather')
-
+        self.vprint('Setting AC input')
+        self.set_ac_input()
         self.vprint('Setting spike recording')
         self.set_spike_rec()
         if state:

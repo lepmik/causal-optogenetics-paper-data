@@ -11,7 +11,7 @@ parameters = {
     'res'             : 0.1, # Temporal resolution for simulation Delta t in ms
     'delay'           : 1.5, # Synaptic delay in ms
     # Neuron parameters
-    't_ref'           : 2.0, # Duration of refractory period in ms
+    't_ref'           : 4.0, # Duration of refractory period in ms
     'V_m'             : 0.0, # Membrane potential, initial condition in mV
     'E_L'             : 0.0, # Leak reversal potential in mV
     'V_reset'         : 0.0, # Reset potential of the membrane in mV
@@ -36,9 +36,13 @@ parameters = {
     'stim_N_in'       : 0,
     'stim_isi_min'    : 200.0, # ms
     'stim_duration'   : 2.0, # ms
-    'stim_trials'     : 100000, #s
-    'stim_amp_ex'     : 8.0, # pA
+    'stim_trials'     : 200000, #s
+    'stim_amp_ex'     : 10.0, # pA
     'stim_amp_in'     : 0.0, # pA
+    # AC params
+    'ac_amp'         : 1.,
+    'ac_offset'      : -.5,
+    'ac_freq'        : 10.,
     # Optogenetics
     'I0': 10, # light intensity leaving fibre mW/mm2
     'r': 100e-3, # 100 um radius of fiber
