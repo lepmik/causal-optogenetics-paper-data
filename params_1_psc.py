@@ -36,12 +36,12 @@ parameters = {
     'stim_N_in'       : 0,
     'stim_isi_min'    : 200.0, # ms
     'stim_duration'   : 2.0, # ms
-    'stim_trials'     : 200000, #s
+    'stim_trials'     : 400000, #s
     'stim_amp_ex'     : 10.0, # pA
     'stim_amp_in'     : 0.0, # pA
     # AC params
-    'ac_amp'         : 1.,
-    'ac_offset'      : -.5,
+    'ac_amp'         : .25,
+    'ac_offset'      : -.2,
     'ac_freq'        : 10.,
     # Optogenetics
     'I0': 10, # light intensity leaving fibre mW/mm2
