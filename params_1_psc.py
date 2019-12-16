@@ -1,6 +1,6 @@
 parameters = {
     'msd'             : 1234, # Master seed
-    'num_threads'     : 8,
+    'num_threads'     : 12,
     'N_neurons'       : 4000,
     'N_ex'            : 3200,
     'N_in'            : 800,
@@ -41,7 +41,7 @@ parameters = {
     'stim_amp_in'     : 0.0, # pA
     # AC params
     'ac_amp'         : .25,
-    'ac_offset'      : -.2,
+    'ac_offset'      : -.25,
     'ac_freq'        : 10.,
     # Optogenetics
     'I0': 10, # light intensity leaving fibre mW/mm2
@@ -49,7 +49,7 @@ parameters = {
     'n': 1.36, # refraction index of gray matter
     'NA': 0.37, # Numerical Aperture of fiber
     'S': 10.3, # mm^-1 scattering index for rat, mouse = 11.2
-    'N_pos': 10,
+    'N_pos': 100,
     'depth': .7,
     'Imax': 642, # max current pA
     'K': 0.84, # half-maximal light sensitivity of the ChR2 mW/mm2
