@@ -245,8 +245,9 @@ class Simulator:
         self.stim_amps_in = {}
         self.stim_nodes_ex = []
         self.stim_nodes_in = []
+        nodes_permute = np.random.permutation(self.nodes_ex)
         for i, N_stim in enumerate(N_slice):
-            nodes = self.nodes_ex[idx:idx + N_stim]
+            nodes = nodes_permute[idx:idx + N_stim]
             self.stim_nodes_ex.extend(list(nodes))
             idx += N_stim
             amp = A[i] * self.p['stim_amp_ex']
