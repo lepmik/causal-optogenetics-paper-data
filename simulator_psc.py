@@ -257,7 +257,7 @@ class Simulator:
                 params={'amplitude': amp,
                         'start': 0.,
                         'stop': self.p['stim_duration']})
-            nest.Connect(stim, nodes)
+            nest.Connect(stim, nodes.tolist())
             stims.append(stim)
 
         assert all(np.in1d(self.stim_nodes_ex, self.nodes_ex))
@@ -285,8 +285,7 @@ class Simulator:
         }
         np.savez(self.data_path / 'stimulation_data_{}.npz'.format(nest.Rank()), data=data)
 
-    def simulate(self, state=False,
-                 progress_bar=False):
+    def simulate(self, state=False, progress_bar=False, connfile=None):
         self.vprint('Setting kernel')
         self.set_kernel()
         self.vprint('Setting neurons')
@@ -294,8 +293,10 @@ class Simulator:
         self.vprint('Setting background')
         self.set_background()
         self.vprint('Setting connections')
-        self.set_connections()
-        # self.set_connections_from_file('params_1_psc_connections.feather')
+        if connfile is None:
+            self.set_connections()
+        else:
+            self.set_connections_from_file(connfile)
         self.vprint('Setting AC input')
         self.set_ac_input()
         self.vprint('Setting spike recording')
@@ -327,10 +328,14 @@ if __name__ == '__main__':
     import imp
     import os.path as op
 
-    if len(sys.argv) not in [2, 3]:
-        raise IOError('Usage: "python simulator.py data_path parameters')
+    if len(sys.argv) == 3:
+        data_path, param_module = sys.argv[1:]
+        connfile = None
+    elif len(sys.argv) == 4:
+        data_path, param_module, connfile = sys.argv[1:]
+    else:
+        raise IOError('Usage: "python simulator.py data_path parameters [connfile]')
 
-    data_path, param_module = sys.argv[1:]
     os.makedirs(data_path, exist_ok=True)
     jobname = param_module.replace('.py', '')
     currdir = op.dirname(op.abspath(__file__))
@@ -338,4 +343,4 @@ if __name__ == '__main__':
     parameters = imp.load_module(jobname, f, p, d).parameters
 
     sim = Simulator(parameters, data_path=data_path, jobname=jobname, verbose=True)
-    sim.simulate(state=False, progress_bar=True)
+    sim.simulate(state=False, progress_bar=True, connfile=connfile)
