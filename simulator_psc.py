@@ -110,6 +110,9 @@ class Simulator:
                 'weight': conn.weight.values,
                 'delay': self.p['delay']})
 
+        conn.to_feather(
+            self.data_path / 'connections_{}.feather'.format(nest.Rank()))
+
 
     def set_connections(self):
 
