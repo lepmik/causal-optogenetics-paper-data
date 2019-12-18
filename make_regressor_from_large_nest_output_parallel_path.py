@@ -53,7 +53,7 @@ pbar = tqdm(total=len(paths))
 def update(*a):
     pbar.update()
 
-with multiprocessing.Pool(n_cores) as pool:
+with mp.Pool(n_cores) as pool:
     for f in paths:
         df = pd.read_csv(f, sep='\t', header=None)
         df = df.rename(columns={0:'sender', 1:'times'}).drop(columns=2)
