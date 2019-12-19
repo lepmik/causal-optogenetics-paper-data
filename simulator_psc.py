@@ -209,13 +209,7 @@ class Simulator:
         )
         nest.Connect(ac, self.nodes)
 
-    def simulate_trials(self, progress_bar=False):
-        if progress_bar:
-            if not callable(progress_bar):
-                progress_bar = tqdm
-        else:
-            progress_bar = lambda x: x
-
+    def compute_stim_amps(self):
         def intensity(z):
             rho = self.p['r'] * np.sqrt((self.p['n'] / self.p['NA'])**2 - 1)
             return rho**2 / ((self.p['S'] * z + 1) * (z + rho)**2)
@@ -236,9 +230,7 @@ class Simulator:
             In = I**self.p['n_hill']
             return self.p['Imax'] * In / (self.p['K']**self.p['n_hill'] + In) # peak amplitude of the current response
 
-        nest.Simulate(self.p['init_simtime'])
         # Set dc stimulation
-        stims = []
         z = np.linspace(0, self.p['depth'], self.p['N_pos'])
         N_slice = affected_neurons(z).astype(int)
 
@@ -257,23 +249,41 @@ class Simulator:
             idx += N_stim
             amp = A[i] * self.p['stim_amp_ex']
             self.stim_amps_ex.update({n: amp for n in nodes})
+
+        assert all(np.in1d(self.stim_nodes_ex, self.nodes_ex))
+        assert all(np.in1d(self.stim_nodes_in, self.nodes_in))
+
+    def assign_stim_amps(self, stim_amps):
+        self.stim_generators = []
+        for n, amp in stim_amps.items():
             stim = nest.Create(
                 "dc_generator",
                 params={'amplitude': amp,
                         'start': 0.,
                         'stop': self.p['stim_duration']})
-            nest.Connect(stim, nodes.tolist())
-            stims.append(stim)
+            nest.Connect(stim, (n,))
+            self.stim_generators.append(stim)
 
-        assert all(np.in1d(self.stim_nodes_ex, self.nodes_ex))
-        assert all(np.in1d(self.stim_nodes_in, self.nodes_in))
+    def simulate_trials(self, progress_bar=False, stim_amps=None):
+        if progress_bar:
+            if not callable(progress_bar):
+                progress_bar = tqdm
+        else:
+            progress_bar = lambda x: x
 
+        nest.Simulate(self.p['init_simtime'])
+
+        if stim_amps is None:
+            self.compute_stim_amps()
+            self.assign_stim_amps(self.stim_amps_ex)
+        else:
+            self.assign_stim_amps(stim_amps)
 
         stim_times = []
         for _ in progress_bar(range(self.p['stim_trials'])):
             stim_time = nest.GetKernelStatus()['time']
             stim_times.append(stim_time)
-            for stim in stims:
+            for stim in self.stim_generators:
                 nest.SetStatus(stim, {'origin': stim_time})
             nest.Simulate(self.p['stim_isi_min'] + round(np.random.uniform(0, 20), 1))
 
@@ -292,7 +302,7 @@ class Simulator:
             self.vprint('Saving stim times')
             np.savez(self.data_path / 'stimulation_data_{}.npz'.format(nest.Rank()), data=data)
 
-    def simulate(self, state=False, progress_bar=False, connfile=None):
+    def simulate(self, state=False, progress_bar=False, connfile=None, stim_amps=None):
         self.vprint('Setting kernel')
         self.set_kernel()
         self.vprint('Setting neurons')
@@ -312,7 +322,7 @@ class Simulator:
             self.vprint('Setting state recording')
             self.set_state_rec()
         tstart = time.time()
-        self.simulate_trials(progress_bar=progress_bar)
+        self.simulate_trials(progress_bar=progress_bar, stim_amps=stim_amps)
         self.vprint('Simulation lapsed {:.2f} s'.format(time.time() - tstart))
         if self.save_to_file:
             self.vprint('Saving parameters')
@@ -329,6 +339,17 @@ class Simulator:
             json.dump(self.p, outfile,
                       sort_keys=True, indent=4,
                       cls=NumpyEncoder)
+
+    def get_spikes(self, pop='all'):
+        if pop == 'ex':
+            return pd.DataFrame(nest.GetStatus(sim.spikes_ex, 'events')[0])
+        if pop == 'in':
+            return pd.DataFrame(nest.GetStatus(sim.spikes_in, 'events')[0])
+        if pop == 'all':
+            ex = pd.DataFrame(nest.GetStatus(sim.spikes_ex, 'events')[0])
+            in = pd.DataFrame(nest.GetStatus(sim.spikes_in, 'events')[0])
+            return ex, in
+
 
 
 if __name__ == '__main__':

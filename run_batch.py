@@ -1,3 +1,11 @@
+import numpy as np
+import pandas as pd
+from simulator_psc import Simulator
+import sys
+import imp
+import os.path as op
+import nest
+
 
 def make_regressors(stim_data, connections, spikes, z1=-2, z2=0, x1=1, x2=3, y1=3, y2=7, yb1=-4, yb2=0):
     sender_ids = connections.query('weight >= 0').source.sort_values().unique()
@@ -64,11 +72,6 @@ def compute_conditional_means(stim_data, connections, X, Y, Z, Yb):
 
 
 if __name__ == '__main__':
-    import sys
-    import imp
-    import os.path as op
-
-
     if len(sys.argv) == 5:
         data_path, param_module, connfile, n_runs = sys.argv[1:]
     else:
@@ -80,7 +83,8 @@ if __name__ == '__main__':
     parameters = imp.load_module(jobname, f, p, d).parameters
 
     labels = 'y_ref, yb_ref, y_base, yb_base, y_respons, yb_respons'
-    for n in range(n_runs):'
+    stim_amps = None
+    for n in range(n_runs):
         seed = np.random.randint(1000, 9999)
         sim = Simulator(
             parameters,
@@ -92,9 +96,12 @@ if __name__ == '__main__':
         sim.simulate(
             state=False,
             progress_bar=True,
-            connfile=connfile
+            connfile=connfile,
+            stim_amps=stim_amps
         )
-        spikes = pd.DataFrame(nest.GetStatus(sim.spikes_ex, 'events')[0])
+        if stim_amps is None:
+            stim_amps = sim.stim_amps_ex
+        spikes = sim.get_spikes('ex')
         sim.dump_params_to_json(suffix=n)
         X, Y, Z, Yb = make_regressors(
             stim_data=sim.stim_data,
@@ -109,3 +116,11 @@ if __name__ == '__main__':
         for df, label in zip(data, labels):
             df.to_feather(
                 sim.data_path / '{}_{}.feather'.format(label, n))
+    ground_truth = sim.connections
+    ground_truth.loc[:,'source_stimulated'] = ground_truth.source.isin(
+        sim.stim_data['stim_nodes']['ex'])
+    ground_truth.loc[:,'target_stimulated'] = ground_truth.target.isin(
+        sim.stim_data['stim_nodes']['ex'])
+    ground_truth['stim_amp_source'] = conn.progress_apply(
+        lambda x: stim_amps['ex'].get(x.source, 0), axis=1)
+    ground_truth.to_feather(sim.data_path / 'ground_truth.feather')
