@@ -6,7 +6,6 @@ import json
 import sys
 import multiprocessing as mp
 
-n_cores = 8
 
 path = pathlib.Path(sys.argv[1])
 

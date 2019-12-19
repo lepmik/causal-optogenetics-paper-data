@@ -37,7 +37,7 @@ class Simulator:
         parameters = copy.deepcopy(parameters)
         if kwargs:
             parameters.update(kwargs)
-
+        self.save_to_file = parameters.get('save_to_file') or True
         if 'data_path' not in parameters:
             parameters['data_path'] = os.getcwd()
         self.data_path = pathlib.Path(parameters['data_path'])
@@ -95,7 +95,7 @@ class Simulator:
         # conn = pd.concat([
         #     pd.read_feather(p) for p in self.data_path.iterdir()
         #     if p.suffix == '.feather'])
-        conn = pd.read_feather(filename)
+        self.connections = pd.read_feather(filename)
         # for row in conn.itertuples():
         #     nest.Connect(
         #         (row.source,), (row.target,),
@@ -104,14 +104,14 @@ class Simulator:
         #             'weight': [row.weight],
         #             "delay": self.p['delay']})
         nest.Connect(
-            conn.source.values, conn.target.values,
+            self.connections.source.values, self.connections.target.values,
             conn_spec={'rule': 'one_to_one'},
              syn_spec={
-                'weight': conn.weight.values,
+                'weight': self.connections.weight.values,
                 'delay': self.p['delay']})
-
-        conn.to_feather(
-            self.data_path / 'connections_{}.feather'.format(nest.Rank()))
+        if self.save_to_file:
+            self.connections.to_feather(
+                self.data_path / 'connections_{}.feather'.format(nest.Rank()))
 
 
     def set_connections(self):
@@ -147,16 +147,18 @@ class Simulator:
             {"weight": self.p['J_in'],
             "delay": self.p['delay']})
 
-
-        self.vprint('Saving connections')
+        self.vprint('Gathering connections')
         tstart = time.time()
         conns = nest.GetConnections(source=self.nodes, target=self.nodes)
         conn_include = ('weight', 'source', 'target')
         conns = list(nest.GetStatus(conns, conn_include))
-        conns = pd.DataFrame(conns, columns=conn_include)
-        conns.to_feather(self.data_path /
-                         'connections_{}.feather'.format(nest.Rank()))
-        self.vprint('Time lapsed {:.2f} s'.format(time.time() - tstart))
+        self.connections = pd.DataFrame(conns, columns=conn_include)
+
+        if self.save_to_file:
+            self.vprint('Saving connections')
+            self.connections.to_feather(self.data_path /
+                             'connections_{}.feather'.format(nest.Rank()))
+            self.vprint('Time lapsed {:.2f} s'.format(time.time() - tstart))
 
     def set_background(self):
         self.p['C_p'] = int(self.p['eps_p'] * self.p['N_neurons'])
@@ -172,8 +174,8 @@ class Simulator:
 
     def set_spike_rec(self):
         spks = nest.Create("spike_detector", 2,
-                         params=[{"label": "ex", "to_file": True},
-                                 {"label": "in", "to_file": True}])
+                         params=[{"label": "ex", "to_file": self.save_to_file},
+                                 {"label": "in", "to_file": self.save_to_file}])
         # connect using all_to_all: all recorded excitatory neurons to one detector
         self.spikes_ex, self.spikes_in = spks[:1], spks[1:]
         N_rec_ex = self.p.get('N_rec_spike_ex') or self.p['N_ex']
@@ -189,7 +191,7 @@ class Simulator:
             vm = nest.Create("multimeter",
                 params = {"interval": sampling_period,
                           "record_from": ['V_m'],
-                          "withgid": True, "to_file": True,
+                          "withgid": True, "to_file": self.save_to_file,
                           "label": label, "withtime": True})
             nest.Connect(vm, nodes[:N_rec])
             return vm
@@ -276,7 +278,7 @@ class Simulator:
             nest.Simulate(self.p['stim_isi_min'] + round(np.random.uniform(0, 20), 1))
 
         self.vprint('Gathering stim times')
-        data = {
+        self.stim_data = {
             'times': np.array(stim_times),
             'durations': [self.p['stim_duration']] * len(stim_times),
             'stim_nodes': {
@@ -286,7 +288,9 @@ class Simulator:
                 'ex': self.stim_amps_ex,
                 'in': self.stim_amps_in}
         }
-        np.savez(self.data_path / 'stimulation_data_{}.npz'.format(nest.Rank()), data=data)
+        if self.save_to_file:
+            self.vprint('Saving stim times')
+            np.savez(self.data_path / 'stimulation_data_{}.npz'.format(nest.Rank()), data=data)
 
     def simulate(self, state=False, progress_bar=False, connfile=None):
         self.vprint('Setting kernel')
@@ -310,16 +314,17 @@ class Simulator:
         tstart = time.time()
         self.simulate_trials(progress_bar=progress_bar)
         self.vprint('Simulation lapsed {:.2f} s'.format(time.time() - tstart))
-        self.vprint('Saving parameters')
-        self.dump_params_to_json()
+        if self.save_to_file:
+            self.vprint('Saving parameters')
+            self.dump_params_to_json()
 
-    def dump_params_to_json(self):
+    def dump_params_to_json(self, suffix=''):
         status = nest.GetKernelStatus()
         include = ['time']
         status = {k:v for k,v in status.items() if k in include}
         self.p['status'] = status
 
-        fnameout = str(self.data_path / 'params.json')
+        fnameout = str(self.data_path / 'params_{}.json'.format(suffix))
         with open(fnameout, 'w') as outfile:
             json.dump(self.p, outfile,
                       sort_keys=True, indent=4,

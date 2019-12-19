@@ -6,7 +6,7 @@ import json
 import sys
 import multiprocessing as mp
 
-n_cores = 12
+n_cores = 8
 
 path = pathlib.Path(sys.argv[1])
 
@@ -23,10 +23,10 @@ min_sender_ids = min(sender_ids)
 stim_data = np.load(path / 'stimulation_data_0.npz', allow_pickle=True)['data'][()]
 stim_times = np.array(stim_data['times'])
 
-X = np.lib.format.open_memmap(path / 'X_p.npy', dtype=int, shape=(len(stim_times), n_neurons), mode='w+')
-Y = np.lib.format.open_memmap(path / 'Y_p.npy', dtype=int, shape=(len(stim_times), n_neurons), mode='w+')
-Z = np.lib.format.open_memmap(path / 'Z_p.npy', dtype=int, shape=(len(stim_times), n_neurons), mode='w+')
-Yb = np.lib.format.open_memmap(path / 'Yb_p.npy', dtype=int, shape=(len(stim_times), n_neurons), mode='w+')
+X = np.lib.format.open_memmap(path / 'X.npy', dtype=int, shape=(len(stim_times), n_neurons), mode='w+')
+Y = np.lib.format.open_memmap(path / 'Y.npy', dtype=int, shape=(len(stim_times), n_neurons), mode='w+')
+Z = np.lib.format.open_memmap(path / 'Z.npy', dtype=int, shape=(len(stim_times), n_neurons), mode='w+')
+Yb = np.lib.format.open_memmap(path / 'Yb.npy', dtype=int, shape=(len(stim_times), n_neurons), mode='w+')
 
 
 def update_regressors(stims, spikes, z1=-2, z2=0, x1=1, x2=3, y1=3, y2=7, yb1=-4, yb2=0):
@@ -60,3 +60,7 @@ for f in tqdm(paths):
 
     for process in processes:
         process.join()
+
+
+# save data to file
+del X, Y, Z, Yb
