@@ -49,8 +49,8 @@ pandarallel.initialize(progress_bar=True)
 def compute_response(row, spikes, a, b):
     senders = spikes.senders
     times = spikes.times
-
-    idx = np.searchsorted(times, [a, b], side='right')
+    t = row.name
+    idx = np.searchsorted(times, [t + a, t + b], side='right')
     row.loc[senders[idx[0]: idx[1]]] = 1
     return row
 
@@ -117,10 +117,11 @@ if __name__ == '__main__':
 
         sender_ids_ex = sim.connections.query('weight >= 0').source.sort_values().unique()
         assert min(sender_ids_ex) == 1
-
+        n_neurons = len(sender_ids_ex)
+        stim_times = sim.stim_data['times']
         X = pd.DataFrame(
             np.zeros((len(stim_times), n_neurons)),
-            index=stim_data['times'], columns=sender_ids_ex
+            index=stim_times, columns=sender_ids_ex
         )
         Y, Z, Yb = X.copy(), X.copy(), X.copy()
 
