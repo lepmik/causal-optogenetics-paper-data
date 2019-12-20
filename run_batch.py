@@ -83,7 +83,8 @@ if __name__ == '__main__':
             data_path=data_path,
             jobname=jobname,
             verbose=False,
-            save_to_file=False
+            save_to_file=False,
+            msd=seed
         )
         sim.simulate(
             state=False,
