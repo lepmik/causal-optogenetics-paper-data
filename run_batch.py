@@ -60,7 +60,14 @@ def compute_conditional_means(row, X, Y, Z, Yb, min_sender_ids):
     y_respons = y[x==1].mean()
     yb_respons = yb[x==1].mean()
 
-    return y_ref, yb_ref, y_base, yb_base, y_respons, yb_respons
+    return pd.Series({
+        'y_ref': y_ref,
+        'yb_ref': yb_ref,
+        'y_base': y_base,
+        'yb_base': yb_base,
+        'y_respons': y_respons,
+        'yb_respons': yb_respons
+    })
 
 
 if __name__ == '__main__':
@@ -106,22 +113,24 @@ if __name__ == '__main__':
         )
 
         stim_nodes = list(stim_amps.keys())
-        connections = sim.connections.query('weight >= 0')
-        min_sender_ids = min(connections.source)
-        connections = connections.query(
+        results = sim.connections.query('weight >= 0')
+        min_sender_ids = min(results.source)
+        results = results.query(
             'target not in @stim_nodes and target in @sender_ids_ex')
-        connections.loc[:,'source_stimulated'] = connections.source.isin(
+        results.loc[:,'source_stimulated'] = results.source.isin(
             stim_nodes)
-        connections.loc[:,'target_stimulated'] = connections.target.isin(
+        results.loc[:,'target_stimulated'] = results.target.isin(
             stim_nodes)
 
-        connections['stim_amp_source'] = connections.parallel_apply(
+        results['stim_amp_source'] = results.parallel_apply(
             lambda x: stim_amps.get(x.source, 0), axis=1)
 
-        connections.parallel_apply(
-            compute_conditional_means, axis=1, X=X, Y=Y, Z=Z, Yb=Yb,
-            min_sender_ids=min_sender_ids
-        )
+        results = results.join(results.parallel_apply(
+            compute_conditional_means, axis=1,
+            X=X, Y=Y, Z=Z, Yb=Yb,
+            min_sender_ids=min_sender_ids,
+            result_type='expand'
+        ))
 
-        connections.reset_index(drop=True).to_feather(
+        results.reset_index(drop=True).to_feather(
             sim.data_path / 'conditional_means_{}.feather'.format(n))
