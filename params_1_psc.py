@@ -1,6 +1,6 @@
 parameters = {
     'msd'             : 1234, # Master seed
-    'num_threads'     : 12,
+    'num_threads'     : 40,
     'N_neurons'       : 4000,
     'N_ex'            : 3200,
     'N_in'            : 800,
@@ -36,7 +36,7 @@ parameters = {
     'stim_N_in'       : 0,
     'stim_isi_min'    : 200.0, # ms
     'stim_duration'   : 2.0, # ms
-    'stim_trials'     : 10, #s
+    'stim_trials'     : 10000, #s
     'stim_amp_ex'     : 10.0, # pA
     'stim_amp_in'     : 0.0, # pA
     # AC params

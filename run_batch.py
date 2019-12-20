@@ -11,10 +11,12 @@ import warnings
 warnings.filterwarnings("ignore")
 
 # Initialization
-pandarallel.initialize(progress_bar=True)
+pandarallel.initialize(progress_bar=False)
 
 
-def make_regressors(stim_data, sender_ids, spikes, z1=-2, z2=0, x1=1, x2=3, y1=3, y2=7, yb1=-4, yb2=0):
+def make_regressors(
+    stim_data, sender_ids, spikes,
+    z1=-2, z2=0, x1=1, x2=3, y1=3, y2=7, yb1=-4, yb2=0):
 
     n_neurons = len(sender_ids)
     min_sender_ids = min(sender_ids)
@@ -80,7 +82,7 @@ if __name__ == '__main__':
     currdir = op.dirname(op.abspath(__file__))
     f, p, d = imp.find_module(jobname, [currdir])
     parameters = imp.load_module(jobname, f, p, d).parameters
-
+    np.random.seed(parameters['msd'])
     labels = 'y_ref, yb_ref, y_base, yb_base, y_respons, yb_respons'
     stim_amps = None
     for n in tqdm(range(int(n_runs))):
