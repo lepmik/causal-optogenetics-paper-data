@@ -37,10 +37,12 @@ class Simulator:
         parameters = copy.deepcopy(parameters)
         if kwargs:
             parameters.update(kwargs)
-        self.save_to_file = parameters.get('save_to_file') or True
+        save_to_file = parameters.get('save_to_file')
+        self.save_to_file = save_to_file if save_to_file is not None else True
         if 'data_path' not in parameters:
             parameters['data_path'] = os.getcwd()
         self.data_path = pathlib.Path(parameters['data_path'])
+        self.data_path.mkdir(exist_ok=True)
         parameters['verbose'] = verbose
         self.p = parameters
 
@@ -238,20 +240,13 @@ class Simulator:
         A = hill(self.p['I0'] * I)
         A = A / A.max()
         idx = 0
-        self.stim_amps_ex = {}
-        self.stim_amps_in = {}
-        self.stim_nodes_ex = []
-        self.stim_nodes_in = []
+        self.stim_amps = {}
         nodes_permute = np.random.permutation(self.nodes_ex)
         for i, N_stim in enumerate(N_slice):
             nodes = nodes_permute[idx:idx + N_stim]
-            self.stim_nodes_ex.extend(list(nodes))
             idx += N_stim
             amp = A[i] * self.p['stim_amp_ex']
-            self.stim_amps_ex.update({n: amp for n in nodes})
-
-        assert all(np.in1d(self.stim_nodes_ex, self.nodes_ex))
-        assert all(np.in1d(self.stim_nodes_in, self.nodes_in))
+            self.stim_amps.update({n: amp for n in nodes})
 
     def assign_stim_amps(self, stim_amps):
         self.stim_generators = []
@@ -275,8 +270,9 @@ class Simulator:
 
         if stim_amps is None:
             self.compute_stim_amps()
-            self.assign_stim_amps(self.stim_amps_ex)
+            self.assign_stim_amps(self.stim_amps)
         else:
+            self.stim_amps = stim_amps
             self.assign_stim_amps(stim_amps)
 
         stim_times = []
@@ -291,16 +287,13 @@ class Simulator:
         self.stim_data = {
             'times': np.array(stim_times),
             'durations': [self.p['stim_duration']] * len(stim_times),
-            'stim_nodes': {
-                'ex': self.stim_nodes_ex,
-                'in': self.stim_nodes_in},
-            'stim_amps': {
-                'ex': self.stim_amps_ex,
-                'in': self.stim_amps_in}
+            'stim_amps': self.stim_amps
         }
         if self.save_to_file:
             self.vprint('Saving stim times')
-            np.savez(self.data_path / 'stimulation_data_{}.npz'.format(nest.Rank()), data=data)
+            np.savez(
+                self.data_path / 'stimulation_data_{}.npz'.format(nest.Rank()),
+                data=self.stim_data)
 
     def simulate(self, state=False, progress_bar=False, connfile=None, stim_amps=None):
         self.vprint('Setting kernel')
@@ -342,13 +335,13 @@ class Simulator:
 
     def get_spikes(self, pop='all'):
         if pop == 'ex':
-            return pd.DataFrame(nest.GetStatus(sim.spikes_ex, 'events')[0])
+            return pd.DataFrame(nest.GetStatus(self.spikes_ex, 'events')[0])
         if pop == 'in':
-            return pd.DataFrame(nest.GetStatus(sim.spikes_in, 'events')[0])
+            return pd.DataFrame(nest.GetStatus(self.spikes_in, 'events')[0])
         if pop == 'all':
-            ex = pd.DataFrame(nest.GetStatus(sim.spikes_ex, 'events')[0])
-            in = pd.DataFrame(nest.GetStatus(sim.spikes_in, 'events')[0])
-            return ex, in
+            ex_ = pd.DataFrame(nest.GetStatus(self.spikes_ex, 'events')[0])
+            in_ = pd.DataFrame(nest.GetStatus(self.spikes_in, 'events')[0])
+            return ex_, in_
 
 
 

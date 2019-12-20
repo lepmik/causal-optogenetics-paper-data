@@ -5,10 +5,17 @@ import sys
 import imp
 import os.path as op
 import nest
+from tqdm import tqdm
+from pandarallel import pandarallel
+import warnings
+warnings.filterwarnings("ignore")
+
+# Initialization
+pandarallel.initialize(progress_bar=True)
 
 
-def make_regressors(stim_data, connections, spikes, z1=-2, z2=0, x1=1, x2=3, y1=3, y2=7, yb1=-4, yb2=0):
-    sender_ids = connections.query('weight >= 0').source.sort_values().unique()
+def make_regressors(stim_data, sender_ids, spikes, z1=-2, z2=0, x1=1, x2=3, y1=3, y2=7, yb1=-4, yb2=0):
+
     n_neurons = len(sender_ids)
     min_sender_ids = min(sender_ids)
     stim_times = np.array(stim_data['times'])
@@ -18,7 +25,7 @@ def make_regressors(stim_data, connections, spikes, z1=-2, z2=0, x1=1, x2=3, y1=
     Z = np.zeros((len(stim_times), n_neurons))
     Yb = np.zeros((len(stim_times), n_neurons))
 
-    senders = spikes.sender
+    senders = spikes.senders
     times = spikes.times
 
     for i, t in enumerate(stim_times):
@@ -37,36 +44,21 @@ def make_regressors(stim_data, connections, spikes, z1=-2, z2=0, x1=1, x2=3, y1=
     return X, Y, Z, Yb
 
 
-def compute_conditional_means(stim_data, connections, X, Y, Z, Yb):
-    source_ids = stim_data['stim_nodes']['ex']
-    sender_ids = connections.query('weight >= 0')
-    min_sender_ids = min(sender_ids)
-    target_ids = sender_ids.query('source not in @stim_ids')
-    target_ids = target_ids.source.sort_values().unique()
-    y_ref = pd.DataFrame(
-        np.zeros((len(source_ids), len(target_ids))),
-        index=stim_ids, columns=sender_ids)
-    yb_ref = y_ref.copy()
-    y_base = y_ref.copy()
-    yb_base = y_ref.copy()
-    y_respons = y_ref.copy()
-    yb_respons = y_ref.copy()
+def compute_conditional_means(row, X, Y, Z, Yb, min_sender_ids):
 
-    for source in source_ids:
-        for target in target_ids:
-            z = Z[:, int(source) - min_sender_ids]
-            x = X[:, int(source) - min_sender_ids]
-            y = Y[:, int(target) - min_sender_ids]
-            yb = Yb[:, int(target) - min_sender_ids]
+    z = Z[:, int(row.source) - min_sender_ids]
+    x = X[:, int(row.source) - min_sender_ids]
+    y = Y[:, int(row.target) - min_sender_ids]
+    yb = Yb[:, int(row.target) - min_sender_ids]
 
-            y_ref.loc[source, target] = y[z==1].mean()
-            yb_ref.loc[source, target] = yb[z==1].mean()
+    y_ref = y[z==1].mean()
+    yb_ref = yb[z==1].mean()
 
-            y_base.loc[source, target] = y[x==0].mean()
-            yb_base.loc[source, target] = yb[x==0].mean()
+    y_base = y[x==0].mean()
+    yb_base = yb[x==0].mean()
 
-            y_respons.loc[source, target] = y[x==1].mean()
-            yb_respons.loc[source, target] = yb[x==1].mean()
+    y_respons = y[x==1].mean()
+    yb_respons = yb[x==1].mean()
 
     return y_ref, yb_ref, y_base, yb_base, y_respons, yb_respons
 
@@ -84,7 +76,7 @@ if __name__ == '__main__':
 
     labels = 'y_ref, yb_ref, y_base, yb_base, y_respons, yb_respons'
     stim_amps = None
-    for n in range(n_runs):
+    for n in tqdm(range(int(n_runs))):
         seed = np.random.randint(1000, 9999)
         sim = Simulator(
             parameters,
@@ -100,27 +92,35 @@ if __name__ == '__main__':
             stim_amps=stim_amps
         )
         if stim_amps is None:
-            stim_amps = sim.stim_amps_ex
+            stim_amps = sim.stim_amps
         spikes = sim.get_spikes('ex')
         sim.dump_params_to_json(suffix=n)
+
+        sender_ids_ex = sim.connections.query('weight >= 0').source.sort_values().unique()
+
         X, Y, Z, Yb = make_regressors(
             stim_data=sim.stim_data,
-            connections=sim.connections,
+            sender_ids=sender_ids_ex,
             spikes=spikes
         )
-        data = compute_conditional_means(
-            stim_data=sim.stim_data,
-            connections=sim.connections,
-            X, Y, Z, Yb
+
+        stim_nodes = list(stim_amps.keys())
+        connections = sim.connections.query('weight >= 0')
+        min_sender_ids = min(connections.source)
+        connections = connections.query(
+            'target not in @stim_nodes and target in @sender_ids_ex')
+        connections.loc[:,'source_stimulated'] = connections.source.isin(
+            stim_nodes)
+        connections.loc[:,'target_stimulated'] = connections.target.isin(
+            stim_nodes)
+
+        connections['stim_amp_source'] = connections.parallel_apply(
+            lambda x: stim_amps.get(x.source, 0), axis=1)
+
+        connections.parallel_apply(
+            compute_conditional_means, axis=1, X=X, Y=Y, Z=Z, Yb=Yb,
+            min_sender_ids=min_sender_ids
         )
-        for df, label in zip(data, labels):
-            df.to_feather(
-                sim.data_path / '{}_{}.feather'.format(label, n))
-    ground_truth = sim.connections
-    ground_truth.loc[:,'source_stimulated'] = ground_truth.source.isin(
-        sim.stim_data['stim_nodes']['ex'])
-    ground_truth.loc[:,'target_stimulated'] = ground_truth.target.isin(
-        sim.stim_data['stim_nodes']['ex'])
-    ground_truth['stim_amp_source'] = conn.progress_apply(
-        lambda x: stim_amps['ex'].get(x.source, 0), axis=1)
-    ground_truth.to_feather(sim.data_path / 'ground_truth.feather')
+
+        connections.reset_index(drop=True).to_feather(
+            sim.data_path / 'conditional_means_{}.feather'.format(n))
