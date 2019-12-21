@@ -11,39 +11,36 @@ import warnings
 warnings.filterwarnings("ignore")
 
 # Initialization
-pandarallel.initialize(progress_bar=True)
+pandarallel.initialize(progress_bar=False)
 
 
-# def make_regressors(
-#     stim_data, sender_ids, spikes,
-#     z1=-2, z2=0, x1=1, x2=3, y1=3, y2=7, yb1=-4, yb2=0):
-#
-#     n_neurons = len(sender_ids)
-#     min_sender_ids = min(sender_ids)
-#     stim_times = np.array(stim_data['times'])
-#
-#     X = np.zeros((len(stim_times), n_neurons))
-#     Y = np.zeros((len(stim_times), n_neurons))
-#     Z = np.zeros((len(stim_times), n_neurons))
-#     Yb = np.zeros((len(stim_times), n_neurons))
-#
-#     senders = spikes.senders
-#     times = spikes.times
-#
-#     for i, t in enumerate(stim_times):
-#         search = [
-#             t + x1, t + x2,
-#             t + y1, t + y2,
-#             t + z1, t + z2,
-#             t + yb1, t + yb2
-#         ]
-#         idx = np.searchsorted(times, search, side='right')
-#         X[i, senders[idx[0]: idx[1]] - 1] = 1
-#         Y[i, senders[idx[2]: idx[3]] - 1] = 1
-#         Z[i, senders[idx[4]: idx[5]] - 1] = 1
-#         Yb[i, senders[idx[6]: idx[7]] - 1] = 1
-#
-#     return X, Y, Z, Yb
+def make_regressors(
+    stim_data, sender_ids, spikes,
+    z1=-2, z2=0, x1=1, x2=3, y1=3, y2=7, yb1=-4, yb2=0):
+    n_neurons = len(sender_ids)
+    min_sender_ids = min(sender_ids)
+    stim_times = np.array(stim_data['times'])
+    X = np.zeros((len(stim_times), n_neurons))
+    Y = np.zeros((len(stim_times), n_neurons))
+    Z = np.zeros((len(stim_times), n_neurons))
+    Yb = np.zeros((len(stim_times), n_neurons))
+    senders = spikes.senders
+    times = spikes.times
+
+    for i, t in enumerate(stim_times):
+        search = [
+            t + x1, t + x2,
+            t + y1, t + y2,
+            t + z1, t + z2,
+            t + yb1, t + yb2
+        ]
+        idx = np.searchsorted(times, search, side='right')
+        X[i, senders[idx[0]: idx[1]] - 1] = 1
+        Y[i, senders[idx[2]: idx[3]] - 1] = 1
+        Z[i, senders[idx[4]: idx[5]] - 1] = 1
+        Yb[i, senders[idx[6]: idx[7]] - 1] = 1
+
+    return X, Y, Z, Yb
 
 
 def compute_response(row, spikes, a, b):
@@ -126,14 +123,17 @@ if __name__ == '__main__':
         Y, Z, Yb = X.copy(), X.copy(), X.copy()
 
         X = X.parallel_apply(
-            compute_response, spikes=spikes, a=1, b=3, axis=1, result_type='expand')
-        Y = Y.parallel_apply(
-            compute_response, spikes=spikes, a=3, b=7, axis=1, result_type='expand')
-        Z = Z.parallel_apply(
-            compute_response, spikes=spikes, a=-2, b=0, axis=1, result_type='expand')
-        Yb = Yb.parallel_apply(
-            compute_response, spikes=spikes, a=-4, b=0, axis=1, result_type='expand')
+            compute_response, spikes=spikes, a=1, b=3, axis=1)
+        #Y = Y.parallel_apply(
+        #    compute_response, spikes=spikes, a=3, b=7, axis=1, result_type='expand')
+        #Z = Z.parallel_apply(
+        #    compute_response, spikes=spikes, a=-2, b=0, axis=1, result_type='expand')
+        #Yb = Yb.parallel_apply(
+        #    compute_response, spikes=spikes, a=-4, b=0, axis=1, result_type='expand')
 
+        x, y, z, yb = make_regressors(sim.stim_data, sender_ids_ex, spikes, z1=-2, z2=0, x1=1, x2=3, y1=3, y2=7, yb1=-4, yb2=0)
+        assert np.allclose(X.values, x), (X.values.sum(0), x.sum(0))
+        print('SUCCESSSSSSSSSSSSSSSSS')
         stim_nodes = list(stim_amps.keys())
         results = sim.connections.query('weight >= 0')
         min_sender_ids = min(results.source)
