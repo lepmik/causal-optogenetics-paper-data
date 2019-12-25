@@ -11,7 +11,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 # Initialization
-pandarallel.initialize(progress_bar=False)
+pandarallel.initialize(progress_bar=True)
 
 
 def make_regressors(
@@ -43,10 +43,10 @@ def make_regressors(
     return X, Y, Z, Yb
 
 
-def compute_response(row, spikes, a, b):
+def compute_response(row, stim_times, spikes, a, b):
     senders = spikes.senders
     times = spikes.times
-    t = row.name
+    t = stim_times[row.name]
     idx = np.searchsorted(times, [t + a, t + b], side='right')
     row.loc[senders[idx[0]: idx[1]]] = 1
     return row
@@ -69,6 +69,9 @@ def compute_conditional_means(row, X, Y, Z, Yb, min_sender_ids):
     yb_respons = yb[x==1].mean()
 
     return pd.Series({
+        'n_ref': np.sum(z),
+        'hit_rate_source': np.mean(x),
+        'hit_rate_target': np.mean(y),
         'y_ref': y_ref,
         'yb_ref': yb_ref,
         'y_base': y_base,
@@ -118,22 +121,17 @@ if __name__ == '__main__':
         stim_times = sim.stim_data['times']
         X = pd.DataFrame(
             np.zeros((len(stim_times), n_neurons)),
-            index=stim_times, columns=sender_ids_ex
+            columns=sender_ids_ex
         )
         Y, Z, Yb = X.copy(), X.copy(), X.copy()
-
         X = X.parallel_apply(
-            compute_response, spikes=spikes, a=1, b=3, axis=1)
-        #Y = Y.parallel_apply(
-        #    compute_response, spikes=spikes, a=3, b=7, axis=1, result_type='expand')
-        #Z = Z.parallel_apply(
-        #    compute_response, spikes=spikes, a=-2, b=0, axis=1, result_type='expand')
-        #Yb = Yb.parallel_apply(
-        #    compute_response, spikes=spikes, a=-4, b=0, axis=1, result_type='expand')
-
-        x, y, z, yb = make_regressors(sim.stim_data, sender_ids_ex, spikes, z1=-2, z2=0, x1=1, x2=3, y1=3, y2=7, yb1=-4, yb2=0)
-        assert np.allclose(X.values, x), (X.values.sum(0), x.sum(0))
-        print('SUCCESSSSSSSSSSSSSSSSS')
+            compute_response, stim_times=stim_times, spikes=spikes, a=1, b=3, axis=1)
+        Y = Y.parallel_apply(
+            compute_response, stim_times=stim_times, spikes=spikes, a=3, b=7, axis=1)
+        Z = Z.parallel_apply(
+            compute_response, stim_times=stim_times, spikes=spikes, a=-2, b=0, axis=1)
+        Yb = Yb.parallel_apply(
+            compute_response, stim_times=stim_times, spikes=spikes, a=-4, b=0, axis=1)
         stim_nodes = list(stim_amps.keys())
         results = sim.connections.query('weight >= 0')
         min_sender_ids = min(results.source)
