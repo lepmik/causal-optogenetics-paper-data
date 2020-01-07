@@ -94,7 +94,7 @@ if __name__ == '__main__':
     np.random.seed(parameters['msd'])
     labels = 'y_ref, yb_ref, y_base, yb_base, y_respons, yb_respons'
     stim_amps = None
-    for n in tqdm(range(int(n_runs))):
+    for n in tqdm(range(92, int(n_runs))):
         seed = np.random.randint(1000, 9999)
         sim = Simulator(
             parameters,

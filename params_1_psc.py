@@ -1,5 +1,5 @@
 parameters = {
-    'msd'             : 1234, # Master seed
+    'msd'             : 50311, # Master seed
     'num_threads'     : 20,
     'N_neurons'       : 4000,
     'N_ex'            : 3200,
