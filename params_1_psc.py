@@ -32,7 +32,7 @@ parameters = {
     'rate_p'          : 5., # connection prob
     # Stimulation parameters
     'init_simtime'    : 500., # ms
-    'stim_N_ex'       : 10,
+    'stim_N_ex'       : 1000,
     'stim_N_in'       : 0,
     'stim_isi_min'    : 200.0, # ms
     'stim_duration'   : 2.0, # ms

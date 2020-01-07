@@ -235,7 +235,6 @@ class Simulator:
         # Set dc stimulation
         z = np.linspace(0, self.p['depth'], self.p['N_pos'])
         N_slice = affected_neurons(z).astype(int)
-
         I = intensity(z)
         A = hill(self.p['I0'] * I)
         A = A / A.max()
@@ -270,11 +269,9 @@ class Simulator:
 
         if stim_amps is None:
             self.compute_stim_amps()
-            self.assign_stim_amps(self.stim_amps)
         else:
             self.stim_amps = stim_amps
-            self.assign_stim_amps(stim_amps)
-
+        self.assign_stim_amps(self.stim_amps)
         stim_times = []
         for _ in progress_bar(range(self.p['stim_trials'])):
             stim_time = nest.GetKernelStatus()['time']

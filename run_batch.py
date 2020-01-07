@@ -91,11 +91,10 @@ if __name__ == '__main__':
     currdir = op.dirname(op.abspath(__file__))
     f, p, d = imp.find_module(jobname, [currdir])
     parameters = imp.load_module(jobname, f, p, d).parameters
-    np.random.seed(parameters['msd'])
-    labels = 'y_ref, yb_ref, y_base, yb_base, y_respons, yb_respons'
+
     stim_amps = None
-    for n in tqdm(range(92, int(n_runs))):
-        seed = np.random.randint(1000, 9999)
+    for n in tqdm(range(int(n_runs))):
+        seed = n + 1000
         sim = Simulator(
             parameters,
             data_path=data_path,
@@ -115,13 +114,41 @@ if __name__ == '__main__':
         spikes = sim.get_spikes('ex')
         sim.dump_params_to_json(suffix=n)
 
-        sender_ids_ex = sim.connections.query('weight >= 0').source.sort_values().unique()
+        sender_ids_ex = sim.connections.query('weight >= 0').source.sort_values().unique() # excitatory neurons
         assert min(sender_ids_ex) == 1
-        n_neurons = len(sender_ids_ex)
         stim_times = sim.stim_data['times']
+
+        stim_nodes = list(stim_amps.keys())
+        # only pick excitatory neurons and targets that are not stimulated
+        results = sim.connections.query(
+            'weight >= 0 and target in @sender_ids_ex and target not in @stim_nodes'
+        )
+
+        min_sender_ids = min(results.source)
+        results.loc[:,'source_stimulated'] = results.source.isin(stim_nodes)
+        results.loc[:,'target_stimulated'] = results.target.isin(stim_nodes)
+
+        results['stim_amp_source'] = results.parallel_apply(
+            lambda x: stim_amps.get(x.source, 0), axis=1)
+        print(results['stim_amp_source'])
+        N = 200
+
+        sample = results.query('weight > 0 and stim_amp_source > 1')
+        sample['wr'] = sample.weight.round(3)
+        sample = sample.drop_duplicates('wr')
+
+        query = 'weight < 0.01 and weight >= 0 and stim_amp_source > 1'
+        sample_zero = results.query(query)
+
+        results = pd.concat([sample, sample_zero])
+        include_nodes = np.unique(
+            np.concatenate([results.source.values, results.target.values]))
+        include_nodes = np.sort(include_nodes)
+        n_neurons = len(include_nodes)
+
         X = pd.DataFrame(
             np.zeros((len(stim_times), n_neurons)),
-            columns=sender_ids_ex
+            columns=include_nodes
         )
         Y, Z, Yb = X.copy(), X.copy(), X.copy()
         X = X.parallel_apply(
@@ -132,18 +159,6 @@ if __name__ == '__main__':
             compute_response, stim_times=stim_times, spikes=spikes, a=-2, b=0, axis=1)
         Yb = Yb.parallel_apply(
             compute_response, stim_times=stim_times, spikes=spikes, a=-4, b=0, axis=1)
-        stim_nodes = list(stim_amps.keys())
-        results = sim.connections.query('weight >= 0')
-        min_sender_ids = min(results.source)
-        results = results.query(
-            'target not in @stim_nodes and target in @sender_ids_ex')
-        results.loc[:,'source_stimulated'] = results.source.isin(
-            stim_nodes)
-        results.loc[:,'target_stimulated'] = results.target.isin(
-            stim_nodes)
-
-        results['stim_amp_source'] = results.parallel_apply(
-            lambda x: stim_amps.get(x.source, 0), axis=1)
 
         results = results.join(results.parallel_apply(
             compute_conditional_means, axis=1,
