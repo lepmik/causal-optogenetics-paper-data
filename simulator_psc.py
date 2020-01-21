@@ -310,7 +310,7 @@ class Simulator:
                 status = get_status(self.nodes)
             stim_time = nest.GetKernelStatus()['time']
             self.stim_times.append(stim_time)
-            for stim in stims:
+            for stim in self.stim_generators:
                 nest.SetStatus(stim, {'origin': stim_time})
             nest.Simulate(self.p['post_stimtime'])
 
