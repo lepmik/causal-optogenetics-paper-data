@@ -272,27 +272,49 @@ class Simulator:
         else:
             self.stim_amps = stim_amps
         self.assign_stim_amps(self.stim_amps)
-        stim_times = []
+
+        self.stim_times = []
         for _ in progress_bar(range(self.p['stim_trials'])):
             stim_time = nest.GetKernelStatus()['time']
-            stim_times.append(stim_time)
+            self.stim_times.append(stim_time)
             for stim in self.stim_generators:
                 nest.SetStatus(stim, {'origin': stim_time})
             nest.Simulate(self.p['stim_isi_min'] + round(np.random.uniform(0, 20), 1))
 
-        self.vprint('Gathering stim times')
-        self.stim_data = {
-            'times': np.array(stim_times),
-            'durations': [self.p['stim_duration']] * len(stim_times),
-            'stim_amps': self.stim_amps
-        }
-        if self.save_to_file:
-            self.vprint('Saving stim times')
-            np.savez(
-                self.data_path / 'stimulation_data_{}.npz'.format(nest.Rank()),
-                data=self.stim_data)
+    def simulate_trials_branch(self, progress_bar=False, stim_amps=None):
+        if progress_bar:
+            if not callable(progress_bar):
+                progress_bar = tqdm
+        else:
+            progress_bar = lambda x: x
 
-    def simulate(self, state=False, progress_bar=False, connfile=None, stim_amps=None):
+        nest.Simulate(self.p['init_simtime'])
+
+        if stim_amps is None:
+            self.compute_stim_amps()
+        else:
+            self.stim_amps = stim_amps
+        self.assign_stim_amps(self.stim_amps)
+
+        def get_status(nodes):
+            status = nest.GetStatus(nodes)
+            status = [{'V_m': s['V_m']} for s in status]
+            return status
+
+        status = get_status(self.nodes)
+        self.stim_times = []
+        for i in progress_bar(range(self.p['stim_trials'])):
+            if i > 0:
+                nest.SetStatus(self.nodes, status)
+                nest.Simulate(self.p['stim_isi_min'])
+                status = get_status(self.nodes)
+            stim_time = nest.GetKernelStatus()['time']
+            self.stim_times.append(stim_time)
+            for stim in stims:
+                nest.SetStatus(stim, {'origin': stim_time})
+            nest.Simulate(self.p['post_stimtime'])
+
+    def simulate(self, state=False, progress_bar=False, connfile=None, stim_amps=None, branch_out=False):
         self.vprint('Setting kernel')
         self.set_kernel()
         self.vprint('Setting neurons')
@@ -312,11 +334,25 @@ class Simulator:
             self.vprint('Setting state recording')
             self.set_state_rec()
         tstart = time.time()
-        self.simulate_trials(progress_bar=progress_bar, stim_amps=stim_amps)
+        if branch_out:
+            self.simulate_trials_branch(progress_bar=progress_bar, stim_amps=stim_amps)
+        else:
+            self.simulate_trials(progress_bar=progress_bar, stim_amps=stim_amps)
         self.vprint('Simulation lapsed {:.2f} s'.format(time.time() - tstart))
         if self.save_to_file:
             self.vprint('Saving parameters')
             self.dump_params_to_json()
+        self.vprint('Gathering stim times')
+        self.stim_data = {
+            'times': np.array(self.stim_times),
+            'durations': [self.p['stim_duration']] * len(self.stim_times),
+            'stim_amps': self.stim_amps
+        }
+        if self.save_to_file:
+            self.vprint('Saving stim times')
+            np.savez(
+                self.data_path / 'stimulation_data_{}.npz'.format(nest.Rank()),
+                data=self.stim_data)
 
     def dump_params_to_json(self, suffix=''):
         status = nest.GetKernelStatus()
@@ -362,4 +398,4 @@ if __name__ == '__main__':
     parameters = imp.load_module(jobname, f, p, d).parameters
 
     sim = Simulator(parameters, data_path=data_path, jobname=jobname, verbose=True)
-    sim.simulate(state=False, progress_bar=True, connfile=connfile)
+    sim.simulate(state=False, progress_bar=True, connfile=connfile, branch_out=True)
