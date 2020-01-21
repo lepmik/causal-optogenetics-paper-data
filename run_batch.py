@@ -36,7 +36,8 @@ if __name__ == '__main__':
             state=False,
             progress_bar=True,
             connfile=connfile,
-            stim_amps=stim_amps
+            stim_amps=stim_amps,
+            branch_out=True
         )
         if stim_amps is None:
             stim_amps = sim.stim_amps
