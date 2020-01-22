@@ -38,7 +38,7 @@ parameters = {
     'post_stimtime'   : 10.0, # ms
     'stim_duration'   : 2.0, # ms
     'stim_trials'     : 10000, #s
-    'stim_amp_ex'     : 10.0, # pA
+    'stim_amp_ex'     : 15.0, # pA
     'stim_amp_in'     : 0.0, # pA
     # AC params
     'ac_amp'         : 0.,#.25,
