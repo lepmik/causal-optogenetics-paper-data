@@ -10,7 +10,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 # Initialization
-pandarallel.initialize(progress_bar=True)
+pandarallel.initialize(progress_bar=False)
 
 z1 = -2
 z2 = 0
@@ -80,61 +80,73 @@ if __name__ == '__main__':
     else:
         raise IOError('Usage: "python analyse_batch.py data_path')
     data_path = pathlib.Path(data_path)
+    results = None
+    for path in tqdm(sorted(list(data_path.glob('results_*')))):
+        if not path.is_dir():
+            print('Skipping', path)
+            continue
 
-    conn = pd.read_feather(data_path / 'connections_0.feather')
-    spikes = read_gdf(data_path)
-    sender_ids_ex = conn.query('weight >= 0').source.sort_values().unique() # excitatory neurons
-    assert min(sender_ids_ex) == 1
+        if (path / 'conditional_means.feather').exists():
+            print('Skipping', path)
+            continue
 
-    stim_data = np.load(data_path / 'stimulation_data_0.npz', allow_pickle=True)['data'][()]
-    stim_times = stim_data['times']
-    stim_amps = stim_data['stim_amps']
-    stim_nodes = list(stim_amps.keys())
-    # only pick excitatory neurons and targets that are not stimulated
-    results = conn.query(
-        'weight >= 0 and target in @sender_ids_ex and target not in @stim_nodes'
-    )
+        spikes = read_gdf(path)
 
-    min_sender_ids = min(results.source)
-    results.loc[:,'source_stimulated'] = results.source.isin(stim_nodes)
-    results.loc[:,'target_stimulated'] = results.target.isin(stim_nodes)
+        stim_data = np.load(path / 'stimulation_data_0.npz', allow_pickle=True)['data'][()]
+        stim_times = stim_data['times']
+        stim_amps = stim_data['stim_amps']
+        stim_nodes = list(stim_amps.keys())
+        # only pick excitatory neurons and targets that are not stimulated
+        # use the ones from the first dataset
+        if results is None:
+            conn = pd.read_feather(path / 'connections_0.feather')
+            sender_ids_ex = conn.query('weight >= 0').source.sort_values().unique() # excitatory neurons
+            assert min(sender_ids_ex) == 1
 
-    results['stim_amp_source'] = results.parallel_apply(
-        lambda x: stim_amps.get(x.source, 0), axis=1)
-    N = 200
+            results = conn.query(
+                'weight >= 0 and target in @sender_ids_ex and target not in @stim_nodes'
+            )
 
-    sample = results.query('weight > 0 and stim_amp_source > 1')
-    sample['wr'] = sample.weight.round(3)
-    sample = sample.drop_duplicates('wr')
+            results.loc[:,'source_stimulated'] = results.source.isin(stim_nodes)
+            results.loc[:,'target_stimulated'] = results.target.isin(stim_nodes)
 
-    query = 'weight < 0.01 and weight >= 0 and stim_amp_source > 1'
-    sample_zero = results.query(query)
+            results['stim_amp_source'] = results.parallel_apply(
+                lambda x: stim_amps.get(x.source, 0), axis=1)
+            N = 200
 
-    results = pd.concat([sample, sample_zero])
-    include_nodes = np.unique(
-        np.concatenate([results.source.values, results.target.values]))
-    include_nodes = np.sort(include_nodes)
-    n_neurons = len(include_nodes)
+            sample = results.query('weight > 0 and stim_amp_source > 1')
+            sample['wr'] = sample.weight.round(3)
+            sample = sample.drop_duplicates('wr')
 
-    X = pd.DataFrame(
-        np.zeros((len(stim_times), n_neurons)),
-        columns=include_nodes
-    )
-    Y, Z, Yb = X.copy(), X.copy(), X.copy()
-    X = X.parallel_apply(
-        compute_response, stim_times=stim_times, spikes=spikes, a=x1, b=x2, axis=1)
-    Y = Y.parallel_apply(
-        compute_response, stim_times=stim_times, spikes=spikes, a=y1, b=y2, axis=1)
-    Z = Z.parallel_apply(
-        compute_response, stim_times=stim_times, spikes=spikes, a=z1, b=z2, axis=1)
-    Yb = Yb.parallel_apply(
-        compute_response, stim_times=stim_times, spikes=spikes, a=yb1, b=yb2, axis=1)
+            query = 'weight < 0.01 and weight >= 0 and stim_amp_source > 1'
+            sample_zero = results.query(query)
 
-    results = results.join(results.parallel_apply(
-        compute_conditional_means, axis=1,
-        X=X, Y=Y, Z=Z, Yb=Yb,
-        result_type='expand'
-    ))
+            results = pd.concat([sample, sample_zero])
 
-    results.reset_index(drop=True).to_feather(
-        data_path / 'conditional_means.feather')
+            include_nodes = np.unique(
+                np.concatenate([results.source.values, results.target.values]))
+            include_nodes = np.sort(include_nodes)
+            n_neurons = len(include_nodes)
+
+        X = pd.DataFrame(
+            np.zeros((len(stim_times), n_neurons)),
+            columns=include_nodes
+        )
+        Y, Z, Yb = X.copy(), X.copy(), X.copy()
+        X = X.parallel_apply(
+            compute_response, stim_times=stim_times, spikes=spikes, a=x1, b=x2, axis=1)
+        Y = Y.parallel_apply(
+            compute_response, stim_times=stim_times, spikes=spikes, a=y1, b=y2, axis=1)
+        Z = Z.parallel_apply(
+            compute_response, stim_times=stim_times, spikes=spikes, a=z1, b=z2, axis=1)
+        Yb = Yb.parallel_apply(
+            compute_response, stim_times=stim_times, spikes=spikes, a=yb1, b=yb2, axis=1)
+
+        results_ = results.join(results.parallel_apply(
+            compute_conditional_means, axis=1,
+            X=X, Y=Y, Z=Z, Yb=Yb,
+            result_type='expand'
+        ))
+
+        results_.reset_index(drop=True).to_feather(
+            path / 'conditional_means.feather')

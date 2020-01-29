@@ -211,6 +211,23 @@ class Simulator:
         )
         nest.Connect(ac, self.nodes)
 
+
+    def set_ac_poisson_input(self):
+        # Set confounding drive
+        ac = nest.Create(
+            'sinusoidal_poisson_generator',
+            params={
+                'rate': 0.0,
+                'amplitude': self.p['ac_amp'],
+                'frequency': self.p['ac_freq'],
+                'phase': 0.0,
+                'individual_spike_trains': True})
+
+        nest.Connect(
+            ac, self.nodes,
+            {'rule': 'all_to_all'},
+            {"weight": self.p['ac_offset'],  "delay": self.p['delay']})
+
     def compute_stim_amps(self):
         def intensity(z):
             rho = self.p['r'] * np.sqrt((self.p['n'] / self.p['NA'])**2 - 1)
@@ -327,7 +344,8 @@ class Simulator:
         else:
             self.set_connections_from_file(connfile)
         self.vprint('Setting AC input')
-        self.set_ac_input()
+        # self.set_ac_input()
+        self.set_ac_poisson_input()
         self.vprint('Setting spike recording')
         self.set_spike_rec()
         if state:
