@@ -41,9 +41,9 @@ parameters = {
     'stim_amp_ex'     : 15.0, # pA
     'stim_amp_in'     : 0.0, # pA
     # AC params
-    'ac_amp'         : 0.,#.25,
-    'ac_offset'      : 0.,#-.25,
-    'ac_freq'        : 0.,#10.,
+    'ac_amp'         : .25,
+    'ac_offset'      : -.25,
+    'ac_freq'        : 10.,
     # Optogenetics
     'I0': 10, # light intensity leaving fibre mW/mm2
     'r': 100e-3, # 100 um radius of fiber

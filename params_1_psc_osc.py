@@ -34,16 +34,15 @@ parameters = {
     'init_simtime'    : 500., # ms
     'stim_N_ex'       : 1000,
     'stim_N_in'       : 0,
-    'stim_isi_min'    : 4.0, # ms
-    'post_stimtime'   : 15.0, # ms
+    'stim_isi_min'    : 200.0, # ms
     'stim_duration'   : 2.0, # ms
     'stim_trials'     : 10000, #s
-    'stim_amp_ex'     : 15.0, # pA
+    'stim_amp_ex'     : 10.0, # pA
     'stim_amp_in'     : 0.0, # pA
     # AC params
-    'ac_amp'         : 0.,#.25,
-    'ac_offset'      : 0.,#-.25,
-    'ac_freq'        : 0.,#10.,
+    'ac_amp'         : .25,
+    'ac_offset'      : -.25,
+    'ac_freq'        : 10.,
     # Optogenetics
     'I0': 10, # light intensity leaving fibre mW/mm2
     'r': 100e-3, # 100 um radius of fiber
