@@ -1,11 +1,13 @@
 import numpy as np
 import pathlib
 import nest
+import nest.topology as tp
 import pandas as pd
 import os
 import json
 import time
 import copy
+import itertools
 try:
     from tqdm import tqdm
     PBAR = True
@@ -14,6 +16,24 @@ except ImportError:
 
 nest.set_verbosity(100)
 
+
+def prime_factors(n):
+    result = []
+    for i in itertools.chain([2], itertools.count(3, 2)):
+        if n <= 1:
+            break
+        while n % i == 0:
+            n //= i
+            result.append(i)
+    return result
+
+
+def closest_product(n):
+    primes = np.array(prime_factors(n))
+    products = np.array([(np.prod(primes[:i]), np.prod(primes[i:]))
+                         for i in range(len(primes))])
+    idx = np.argmin(abs(np.diff(products, axis=1)))
+    return products[idx]
 
 def hasattrs(o, *args):
     if any(hasattr(o, a) for a in args):
@@ -71,40 +91,37 @@ class Simulator:
         # set dt
         nest.SetStatus([0], [{"resolution": self.p['res']}])
 
-    def set_neurons(self):
-        self.nodes = nest.Create('iaf_psc_alpha', self.p['N_neurons'])
+    def set_nodes(self):
         keys = [
-              'V_m', #Membrane potential in mV
-              'E_L', #Leak reversal potential in mV.
-              'C_m', #Capacity of the membrane in pF
-              't_ref', #Duration of refractory period in ms.
-              'V_th', #Spike threshold in mV.
-              'V_reset', #Reset potential of the membrane in mV.
-              'tau_m', #Leak conductance in nS;
-              'tau_syn_ex', #Rise time of the excitatory synaptic alpha function in ms.
-              'tau_syn_in', #Rise time of the inhibitory synaptic alpha function in ms.
+            'V_m', #Membrane potential in mV
+            'E_L', #Leak reversal potential in mV.
+            'C_m', #Capacity of the membrane in pF
+            't_ref', #Duration of refractory period in ms.
+            'V_th', #Spike threshold in mV.
+            'V_reset', #Reset potential of the membrane in mV.
+            'tau_m', #Leak conductance in nS;
+            'tau_syn_ex', #Rise time of the excitatory synaptic alpha function in ms.
+            'tau_syn_in', #Rise time of the inhibitory synaptic alpha function in ms.'w_'
         ]
-        self.nodes_ex = self.nodes[:self.p['N_ex']]
-        self.nodes_in = self.nodes[self.p['N_ex']:]
-        nest.SetStatus(self.nodes, [{k: self.p[k] for k in keys}])
-        # nest.SetStatus(self.nodes_ex, [{k: self.p[k+'_ex'] for k in keys}])
-        # nest.SetStatus(self.nodes_in, [{k: self.p[k+'_in'] for k in keys}])
+        nest.CopyModel(
+            'iaf_psc_alpha', "nodes_ex",
+            {k: self.p[k] for k in keys})
+        nest.CopyModel(
+            'iaf_psc_alpha', "nodes_in",
+            {k: self.p[k] for k in keys})
         self.p['C_ex'] = int(self.p['eps'] * self.p['N_ex'])
         self.p['C_in'] = int(self.p['eps'] * self.p['N_in'])
         self.p['J_in'] = - self.p['g'] * self.p['J_ex']
 
+    def create_nodes(self):
+        if 'nodes' not in nest.Models():
+            self.set_nodes()
+        self.nodes_ex = nest.Create('nodes_ex', self.p['N_ex'])
+        self.nodes_in = nest.Create('nodes_in', self.p['N_in'])
+        self.nodes = self.nodes_ex + self.nodes_in
+
     def set_connections_from_file(self, filename):
-        # conn = pd.concat([
-        #     pd.read_feather(p) for p in self.data_path.iterdir()
-        #     if p.suffix == '.feather'])
         self.connections = pd.read_feather(filename)
-        # for row in conn.itertuples():
-        #     nest.Connect(
-        #         (row.source,), (row.target,),
-        #         conn_spec={'rule': 'one_to_one'},
-        #         syn_spec={
-        #             'weight': [row.weight],
-        #             "delay": self.p['delay']})
         nest.Connect(
             self.connections.source.values, self.connections.target.values,
             conn_spec={'rule': 'one_to_one'},
@@ -115,6 +132,86 @@ class Simulator:
             self.connections.to_feather(
                 self.data_path / 'connections_{}.feather'.format(nest.Rank()))
 
+    def set_connections_topology(self):
+        assert self.p['topology_dim'] in [1, 2]
+        def generate_pos(pop):
+            if self.p['position'] == 'random':
+                pos = np.random.uniform(
+                    - self.p['extent'] / 2., self.p['extent'] / 2.,
+                    (2, self.p['N_' + pop]))
+                if self.p['topology_dim'] == 1:
+                    pos[0, :] = 0
+                layer = {
+                    'extent': [self.p['extent'], self.p['extent']],
+                    'positions': pos.T.tolist(),
+                    'elements': 'nodes_' + pop,
+                    'edge_wrap': True}
+            elif self.p['position'] == 'grid':
+                if self.p['topology_dim'] == 2:
+                    N_x, N_y = closest_product(self.p['N_'+pop])
+                else:
+                    N_x, N_y = self.p['N_'+pop], 1
+                assert N_x * N_y == self.p['N_'+pop]
+                layer = {
+                    'extent': [self.p['extent'], self.p['extent']],
+                    'rows' : N_x,
+                    'columns' : N_y,
+                    'elements': 'nodes_' + pop,
+                    'edge_wrap': True}
+                pos = None
+            return layer, pos
+
+        layer_ex, self.pos_ex = generate_pos('ex')
+        layer_in, self.pos_in = generate_pos('in')
+        self.layer_ex = tp.CreateLayer(layer_ex)
+        self.layer_in = tp.CreateLayer(layer_in)
+
+        def connect_layer(source, target, weight):
+            if weight == 0: return
+            nest.CopyModel(
+                'static_synapse', '{}_{}'.format(source, target),
+                {'weight': weight,
+                 'delay': self.p['delay']})
+            syn_spec = {
+                'connection_type': 'divergent',
+                'mask': self.p['mask_{}_{}'.format(source, target)],
+                'kernel': 1.,
+                'sources': {'model': 'nodes_{}'.format(source)},
+                'targets': {'model': 'nodes_{}'.format(target)},
+                'allow_autapses': False}
+
+            tp.ConnectLayers(
+                getattr(self, 'layer_{}'.format(source)),
+                getattr(self, 'layer_{}'.format(target)),
+                syn_spec)
+        connect_layer('ex', 'in', self.p['J_ex'])
+        connect_layer('in', 'ex', self.p['J_in'])
+        self.nodes_ex = nest.GetNodes(self.layer_ex)[0]
+        self.nodes_in = nest.GetNodes(self.layer_in)[0]
+        self.nodes = self.nodes_ex + self.nodes_in
+        if self.pos_ex is None:
+            self.pos_ex = np.array(tp.GetPosition(self.nodes_ex)).T
+        if self.pos_in is None:
+            self.pos_in = np.array(tp.GetPosition(self.nodes_in)).T
+        self.positions = pd.DataFrame(
+            np.vstack([self.nodes, np.hstack([self.pos_ex, self.pos_in])]).T,
+            columns=['nodes', 'x', 'y']
+        )
+
+        self.vprint('Gathering connections')
+        tstart = time.time()
+        conns = nest.GetConnections(source=self.nodes, target=self.nodes)
+        conn_include = ('weight', 'source', 'target')
+        conns = list(nest.GetStatus(conns, conn_include))
+        self.connections = pd.DataFrame(conns, columns=conn_include)
+
+        if self.save_to_file:
+            self.vprint('Saving positions')
+            self.positions.to_feather(self.data_path /
+                             'positions_{}.feather'.format(nest.Rank()))
+            self.vprint('Saving connections')
+            self.connections.to_feather(self.data_path /
+                             'connections_{}.feather'.format(nest.Rank()))
 
     def set_connections(self):
 
@@ -331,35 +428,44 @@ class Simulator:
                 nest.SetStatus(stim, {'origin': stim_time})
             nest.Simulate(self.p['post_stimtime'])
 
-    def simulate(self, state=False, progress_bar=False, connfile=None, stim_amps=None, branch_out=False):
-        self.vprint('Setting kernel')
-        self.set_kernel()
-        self.vprint('Setting neurons')
-        self.set_neurons()
-        self.vprint('Setting background')
-        self.set_background()
-        self.vprint('Setting connections')
-        if connfile is None:
-            self.set_connections()
-        else:
-            self.set_connections_from_file(connfile)
-        self.vprint('Setting AC input')
-        # self.set_ac_input()
-        self.set_ac_poisson_input()
-        self.vprint('Setting spike recording')
-        self.set_spike_rec()
-        if state:
-            self.vprint('Setting state recording')
-            self.set_state_rec()
-        tstart = time.time()
-        if branch_out:
-            self.simulate_trials_branch(progress_bar=progress_bar, stim_amps=stim_amps)
-        else:
-            self.simulate_trials(progress_bar=progress_bar, stim_amps=stim_amps)
-        self.vprint('Simulation lapsed {:.2f} s'.format(time.time() - tstart))
+    def simulate(self, progress_bar=False, connfile=None, stim_amps=None, branch_out=False):
+        for setup in self.p['setup']:
+            self.vprint('Setting', setup)
+            if setup == 'set_connections_from_file':
+                assert connfile is not None
+                getattr(self, setup)(connfile)
+            elif 'simulate_trials' in setup:
+                getattr(self, setup)(progress_bar=progress_bar, stim_amps=stim_amps)
+            else:
+                getattr(self, setup)()
+        # self.set_kernel()
+        # self.vprint('Setting neurons')
+        # self.set_nodes()
+        # self.create_nodes()
+        # self.vprint('Setting background')
+        # self.set_background()
+        # self.vprint('Setting connections')
+        # if connfile is None:
+        #     self.set_connections()
+        # else:
+        #     self.set_connections_from_file(connfile)
+        # self.vprint('Setting AC input')
+        # # self.set_ac_input()
+        # self.set_ac_poisson_input()
+        # self.vprint('Setting spike recording')
+        # self.set_spike_rec()
+        # if state:
+        #     self.vprint('Setting state recording')
+        #     self.set_state_rec()
+        # tstart = time.time()
+        # if branch_out:
+        #     self.simulate_trials_branch(progress_bar=progress_bar, stim_amps=stim_amps)
+        # else:
+        #     self.simulate_trials(progress_bar=progress_bar, stim_amps=stim_amps)
+        # self.vprint('Simulation lapsed {:.2f} s'.format(time.time() - tstart))
         if self.save_to_file:
             self.vprint('Saving parameters')
-            self.dump_params_to_json()
+            self.dump_params_to_json(nest.Rank())
         self.vprint('Gathering stim times')
         self.stim_data = {
             'times': np.array(self.stim_times),
@@ -401,9 +507,9 @@ if __name__ == '__main__':
     import imp
     import os.path as op
 
+    connfile = None
     if len(sys.argv) == 3:
         data_path, param_module = sys.argv[1:]
-        connfile = None
     elif len(sys.argv) == 4:
         data_path, param_module, connfile = sys.argv[1:]
     else:
@@ -416,4 +522,4 @@ if __name__ == '__main__':
     parameters = imp.load_module(jobname, f, p, d).parameters
 
     sim = Simulator(parameters, data_path=data_path, jobname=jobname, verbose=True)
-    sim.simulate(state=False, progress_bar=True, connfile=connfile, branch_out=True)
+    sim.simulate(progress_bar=True, connfile=connfile)

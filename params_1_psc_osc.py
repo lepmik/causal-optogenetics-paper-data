@@ -1,4 +1,15 @@
 parameters = {
+    'setup': [
+        'set_kernel',
+        'set_nodes',
+        'create_nodes',
+        'set_background',
+        'set_connections_from_file',
+        'set_ac_input',
+        'set_spike_rec',
+        # 'set_state_rec',
+        'simulate_trials'
+    ],
     'msd'             : 50311, # Master seed
     'num_threads'     : 20,
     'N_neurons'       : 4000,

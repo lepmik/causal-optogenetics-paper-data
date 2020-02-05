@@ -1,9 +1,20 @@
+import numpy as np
+
 parameters = {
-    'msd'             : 4321, # Master seed
-    'num_threads'     : 4,
-    'N_neurons'       : 1250,
-    'N_ex'            : 1000,
-    'N_in'            : 250,
+    'setup': [
+        'set_kernel',
+        'set_nodes',
+        'set_connections_topology',
+        'set_background',
+        'set_spike_rec',
+        # 'set_state_rec',
+        'simulate_trials_branch'
+    ],
+    'msd'             : 50311, # Master seed
+    'num_threads'     : 20,
+    'N_neurons'       : 4000,
+    'N_ex'            : 3200,
+    'N_in'            : 800,
     'N_rec_spike_ex'  : None,
     'N_rec_spike_in'  : None,
     'N_rec_state_ex'  : None,
@@ -11,7 +22,7 @@ parameters = {
     'res'             : 0.1, # Temporal resolution for simulation Delta t in ms
     'delay'           : 1.5, # Synaptic delay in ms
     # Neuron parameters
-    't_ref'           : 2.0, # Duration of refractory period in ms
+    't_ref'           : 4.0, # Duration of refractory period in ms
     'V_m'             : 0.0, # Membrane potential, initial condition in mV
     'E_L'             : 0.0, # Leak reversal potential in mV
     'V_reset'         : 0.0, # Reset potential of the membrane in mV
@@ -21,30 +32,39 @@ parameters = {
     'tau_syn_ex'      : 1., # Time constants of the excitatory synaptic exponential function in ms
     'tau_syn_in'      : 1., # Time constants of the inhibitory synaptic exponential function in ms
     # Connection parameters
-    'eta'             : .9, # external poisson rate in Hz
-    'J'               : .2, # mV
-    'g'               : 3.0,
-    'eps'            : 0.1, # connection prob
-    'J_high'         : 2.0, # max connection strength
-    'J_low'          : 0.0,
-    'p_var'          : .5, # percentage variation of mean in lognormal dist
+    'J_ex'            : .2, # mV
+    'eps'             : 0.1, # connection prob
+    'g'               : 5.,
+    'J_high'          : 2.0, # max connection strength
+    'J_low'           : 0.0,
+    'p_var'           : .5, # percentage variation of mean in lognormal dist
+    'J_p'             : .2, # mV
+    'eps_p'           : 0.1, # connection prob
+    'rate_p'          : 5., # connection prob
+    # Topology
+    'position'       : 'grid',
+    'topology_dim'   : 2,
+    'extent'         : 2 * np.pi,
+    'mask_ex_in'     : {'doughnut': {'inner_radius': .2 * np.pi,
+                                     'outer_radius': .4 * np.pi}},
+    'mask_in_ex'     : {'circular': {'radius': .15 * np.pi}},
     # Stimulation parameters
-    'stim_N_ex'       : 800,
+    'init_simtime'    : 1000., # ms
+    'stim_N_ex'       : 1000,
     'stim_N_in'       : 0,
-    'stim_dist'       : 'poisson',
-    'stim_amp_ex'     : 8.0, # pA
-    'stim_amp_in'     : 0.0, # pA
-    'stim_period'     : 100.0, # ms
-    'stim_max_period' : 150, # only applies to poisson
+    'stim_isi_min'    : 4.0, # ms
+    'post_stimtime'   : 15.0, # ms
     'stim_duration'   : 2.0, # ms
-    'stim_N'          : 30000,
+    'stim_trials'     : 10, #s
+    'stim_amp_ex'     : 15.0, # pA
+    'stim_amp_in'     : 0.0, # pA
     # Optogenetics
     'I0': 10, # light intensity leaving fibre mW/mm2
     'r': 100e-3, # 100 um radius of fiber
     'n': 1.36, # refraction index of gray matter
     'NA': 0.37, # Numerical Aperture of fiber
     'S': 10.3, # mm^-1 scattering index for rat, mouse = 11.2
-    'N_pos': 10,
+    'N_pos': 100,
     'depth': .7,
     'Imax': 642, # max current pA
     'K': 0.84, # half-maximal light sensitivity of the ChR2 mW/mm2
