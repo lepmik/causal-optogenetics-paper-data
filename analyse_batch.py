@@ -15,9 +15,9 @@ pandarallel.initialize(progress_bar=False)
 z1 = -2
 z2 = 0
 x1 = 1
-x2 = 3.4
-y1 = 3.8
-y2 = 8
+x2 = 3
+y1 = 3
+y2 = 7
 yb1 = -4
 yb2 = 0
 
@@ -27,7 +27,9 @@ def compute_response(row, stim_times, spikes, a, b):
     times = spikes.times
     t = stim_times[row.name]
     idx = np.searchsorted(times, [t + a, t + b], side='right')
-    row.loc[senders[idx[0]: idx[1]]] = 1
+    senders_spiked = senders[idx[0]: idx[1]]
+    senders_set = senders_spiked[np.isin(senders_spiked, row.index)]
+    row.loc[senders_set] = 1
     return row
 
 
@@ -86,9 +88,9 @@ if __name__ == '__main__':
             print('Skipping', path)
             continue
 
-        if (path / 'conditional_means.feather').exists():
-            print('Skipping', path)
-            continue
+        # if (path / 'conditional_means.feather').exists():
+        #     print('Skipping', path)
+        #     continue
 
         spikes = read_gdf(path)
 
@@ -112,15 +114,14 @@ if __name__ == '__main__':
 
             results['stim_amp_source'] = results.parallel_apply(
                 lambda x: stim_amps.get(x.source, 0), axis=1)
-            N = 200
 
-            sample = results.query('weight > 0 and stim_amp_source > 1')
+            sample = results.query('weight > 0.01 and stim_amp_source > 1')
             sample['wr'] = sample.weight.round(3)
             sample = sample.drop_duplicates('wr')
 
-            query = 'weight < 0.01 and weight >= 0 and stim_amp_source > 1'
+            query = 'weight <= 0.01 and weight >= 0 and stim_amp_source > 1'
             sample_zero = results.query(query)
-
+            sample_zero = sample_zero.sample(2000)
             results = pd.concat([sample, sample_zero])
 
             include_nodes = np.unique(
@@ -149,4 +150,4 @@ if __name__ == '__main__':
         ))
 
         results_.reset_index(drop=True).to_feather(
-            path / 'conditional_means.feather')
+            path / 'conditional_means_3-7.feather')
