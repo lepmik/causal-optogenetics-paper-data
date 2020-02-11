@@ -35,6 +35,7 @@ def closest_product(n):
     idx = np.argmin(abs(np.diff(products, axis=1)))
     return products[idx]
 
+
 def hasattrs(o, *args):
     if any(hasattr(o, a) for a in args):
         return True
@@ -61,7 +62,7 @@ class Simulator:
         self.save_to_file = save_to_file if save_to_file is not None else True
         if 'data_path' not in parameters:
             parameters['data_path'] = os.getcwd()
-        self.data_path = pathlib.Path(parameters['data_path'])
+        self.data_path = pathlib.Path(parameters['data_path']).absolute()
         self.data_path.mkdir(exist_ok=True)
         parameters['verbose'] = verbose
         self.p = parameters
@@ -109,12 +110,10 @@ class Simulator:
         nest.CopyModel(
             'iaf_psc_alpha', "nodes_in",
             {k: self.p[k] for k in keys})
-        self.p['C_ex'] = int(self.p['eps'] * self.p['N_ex'])
-        self.p['C_in'] = int(self.p['eps'] * self.p['N_in'])
         self.p['J_in'] = - self.p['g'] * self.p['J_ex']
 
     def create_nodes(self):
-        if 'nodes' not in nest.Models():
+        if 'nodes_ex' not in nest.Models():
             self.set_nodes()
         self.nodes_ex = nest.Create('nodes_ex', self.p['N_ex'])
         self.nodes_in = nest.Create('nodes_in', self.p['N_in'])
@@ -168,14 +167,11 @@ class Simulator:
 
         def connect_layer(source, target, weight):
             if weight == 0: return
-            nest.CopyModel(
-                'static_synapse', '{}_{}'.format(source, target),
-                {'weight': weight,
-                 'delay': self.p['delay']})
             syn_spec = {
                 'connection_type': 'divergent',
                 'mask': self.p['mask_{}_{}'.format(source, target)],
                 'kernel': 1.,
+                'weights': weight,
                 'sources': {'model': 'nodes_{}'.format(source)},
                 'targets': {'model': 'nodes_{}'.format(target)},
                 'allow_autapses': False}
@@ -184,11 +180,16 @@ class Simulator:
                 getattr(self, 'layer_{}'.format(source)),
                 getattr(self, 'layer_{}'.format(target)),
                 syn_spec)
-        connect_layer('ex', 'in', self.p['J_ex'])
+
+        self.vprint('Connecting ex to in with', self.p['J_ex'])
+        connect_layer('ex', 'in', {"gaussian": {"p_center": 1., 'mean': 1., "sigma": .5, 'c': self.p['J_ex']}})
+        self.vprint('Connecting in to ex with', self.p['J_in'])
         connect_layer('in', 'ex', self.p['J_in'])
+
         self.nodes_ex = nest.GetNodes(self.layer_ex)[0]
         self.nodes_in = nest.GetNodes(self.layer_in)[0]
         self.nodes = self.nodes_ex + self.nodes_in
+
         if self.pos_ex is None:
             self.pos_ex = np.array(tp.GetPosition(self.nodes_ex)).T
         if self.pos_in is None:
@@ -199,7 +200,6 @@ class Simulator:
         )
 
         self.vprint('Gathering connections')
-        tstart = time.time()
         conns = nest.GetConnections(source=self.nodes, target=self.nodes)
         conn_include = ('weight', 'source', 'target')
         conns = list(nest.GetStatus(conns, conn_include))
@@ -214,6 +214,8 @@ class Simulator:
                              'connections_{}.feather'.format(nest.Rank()))
 
     def set_connections(self):
+        self.p['C_ex'] = int(self.p['eps'] * self.p['N_ex'])
+        self.p['C_in'] = int(self.p['eps'] * self.p['N_in'])
 
         def mu(mean):
             return np.log(mean / np.sqrt(1 + self.p['p_var'] / mean**2))
@@ -268,6 +270,16 @@ class Simulator:
              params={"rate": self.p['rate_p'] * self.p['C_p']})
         nest.Connect(
             background, self.nodes,
+            {'rule': 'all_to_all'},
+            {"weight": self.p['J_p'],  "delay": self.p['delay']})
+
+    def set_background_ex(self):
+        self.vprint('Connecting background rate = ', self.p['rate_p'])
+        background = nest.Create(
+            "poisson_generator", 1,
+             params={"rate": self.p['rate_p']})
+        nest.Connect(
+            background, self.nodes_ex,
             {'rule': 'all_to_all'},
             {"weight": self.p['J_p'],  "delay": self.p['delay']})
 
@@ -501,6 +513,13 @@ class Simulator:
             return ex_, in_
 
 
+    def plot(self):
+        import nest.raster_plot
+        nest.raster_plot.from_device(self.spikes_ex, hist=False)
+        plt.gcf().savefig(str(self.data_path / 'raster_ex.png'))
+        nest.raster_plot.from_device(self.spikes_in, hist=False)
+        plt.gcf().savefig(str(self.data_path / 'raster_in.png'))
+
 
 if __name__ == '__main__':
     import sys
@@ -515,7 +534,6 @@ if __name__ == '__main__':
     else:
         raise IOError('Usage: "python simulator.py data_path parameters [connfile]')
 
-    os.makedirs(data_path, exist_ok=True)
     jobname = param_module.replace('.py', '')
     currdir = op.dirname(op.abspath(__file__))
     f, p, d = imp.find_module(jobname, [currdir])
@@ -523,3 +541,5 @@ if __name__ == '__main__':
 
     sim = Simulator(parameters, data_path=data_path, jobname=jobname, verbose=True)
     sim.simulate(progress_bar=True, connfile=connfile)
+    import matplotlib.pyplot as plt
+    sim.plot()

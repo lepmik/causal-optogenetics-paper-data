@@ -88,9 +88,9 @@ if __name__ == '__main__':
             print('Skipping', path)
             continue
 
-        # if (path / 'conditional_means.feather').exists():
-        #     print('Skipping', path)
-        #     continue
+        if (path / 'conditional_means_3-7.feather').exists():
+            print('Skipping', path)
+            continue
 
         spikes = read_gdf(path)
 

@@ -5,13 +5,14 @@ parameters = {
         'set_kernel',
         'set_nodes',
         'set_connections_topology',
-        'set_background',
+        # 'create_nodes',
+        'set_background_ex',
         'set_spike_rec',
         # 'set_state_rec',
         'simulate_trials_branch'
     ],
     'msd'             : 50311, # Master seed
-    'num_threads'     : 20,
+    'num_threads'     : 4,
     'N_neurons'       : 4000,
     'N_ex'            : 3200,
     'N_in'            : 800,
@@ -32,22 +33,17 @@ parameters = {
     'tau_syn_ex'      : 1., # Time constants of the excitatory synaptic exponential function in ms
     'tau_syn_in'      : 1., # Time constants of the inhibitory synaptic exponential function in ms
     # Connection parameters
-    'J_ex'            : .2, # mV
-    'eps'             : 0.1, # connection prob
+    'J_ex'            : 1., # mV
     'g'               : 5.,
-    'J_high'          : 2.0, # max connection strength
-    'J_low'           : 0.0,
-    'p_var'           : .5, # percentage variation of mean in lognormal dist
     'J_p'             : .2, # mV
-    'eps_p'           : 0.1, # connection prob
-    'rate_p'          : 5., # connection prob
+    'rate_p'          : 1500., # connection prob
     # Topology
     'position'       : 'grid',
-    'topology_dim'   : 2,
+    'topology_dim'   : 1,
     'extent'         : 2 * np.pi,
-    'mask_ex_in'     : {'doughnut': {'inner_radius': .2 * np.pi,
-                                     'outer_radius': .4 * np.pi}},
-    'mask_in_ex'     : {'circular': {'radius': .15 * np.pi}},
+    'mask_ex_in'     : {'doughnut': {'inner_radius': .5 * np.pi,
+                                     'outer_radius': 1. * np.pi}},
+    'mask_in_ex'     : {'circular': {'radius': .1 * np.pi}},
     # Stimulation parameters
     'init_simtime'    : 1000., # ms
     'stim_N_ex'       : 1000,
