@@ -13,14 +13,18 @@ warnings.filterwarnings("ignore")
 pandarallel.initialize(progress_bar=False)
 
 z1 = -2
-z2 = 0
+z2 = -1
 x1 = 1
 x2 = 3
-y1 = 3
-y2 = 7
+y1 = 3.5
+y2 = 10
 yb1 = -4
 yb2 = 0
 
+# fnameout = path / 'conditional_means_3-7.feather'
+# fnameout = path / 'conditional_means_4-10.feather'
+# fnameout = 'conditional_means_z-(3_1)_y(3_7).feather'
+fnameout = 'conditional_means_z-(2_1)_y(35_10).feather'
 
 def compute_response(row, stim_times, spikes, a, b):
     senders = spikes.senders
@@ -40,14 +44,14 @@ def compute_conditional_means(row, X, Y, Z, Yb):
     y = Y.loc[:, int(row.target)]
     yb = Yb.loc[:, int(row.target)]
 
-    y_ref = y[z==1].mean()
-    yb_ref = yb[z==1].mean()
+    y_ref = y[(z==1) & (x==0)].mean()
+    yb_ref = yb[(z==1) & (x==0)].mean()
 
     y_base = y[x==0].mean()
     yb_base = yb[x==0].mean()
 
-    y_respons = y[x==1].mean()
-    yb_respons = yb[x==1].mean()
+    y_respons = y[(z==0) & (x==1)].mean()
+    yb_respons = yb[(z==0) & (x==1)].mean()
 
     return pd.Series({
         'n_ref': np.sum(z),
@@ -88,13 +92,18 @@ if __name__ == '__main__':
             print('Skipping', path)
             continue
 
-        if (path / 'conditional_means_3-7.feather').exists():
+        if (path / fnameout).exists():
+            print('Skipping', path)
+            continue
+
+        stim_path = path / 'stimulation_data_0.npz'
+        if not stim_path.exists():
             print('Skipping', path)
             continue
 
         spikes = read_gdf(path)
 
-        stim_data = np.load(path / 'stimulation_data_0.npz', allow_pickle=True)['data'][()]
+        stim_data = np.load(stim_path, allow_pickle=True)['data'][()]
         stim_times = stim_data['times']
         stim_amps = stim_data['stim_amps']
         stim_nodes = list(stim_amps.keys())
@@ -149,5 +158,4 @@ if __name__ == '__main__':
             result_type='expand'
         ))
 
-        results_.reset_index(drop=True).to_feather(
-            path / 'conditional_means_3-7.feather')
+        results_.reset_index(drop=True).to_feather(path / fnameout)

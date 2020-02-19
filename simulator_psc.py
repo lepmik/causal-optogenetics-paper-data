@@ -182,7 +182,17 @@ class Simulator:
                 syn_spec)
 
         self.vprint('Connecting ex to in with', self.p['J_ex'])
-        connect_layer('ex', 'in', {"gaussian": {"p_center": 1., 'mean': 1., "sigma": .5, 'c': self.p['J_ex']}})
+        center_doghnut = (
+            self.p['mask_ex_in']['doughnut']['outer_radius'] -
+            self.p['mask_ex_in']['doughnut']['inner_radius']
+        )
+        center_doghnut /= 2
+        connect_layer(
+        'ex', 'in',
+        {"gaussian": {
+            "p_center":  self.p['J_ex'],
+            'mean': center_doghnut,
+            "sigma": .5}})
         self.vprint('Connecting in to ex with', self.p['J_in'])
         connect_layer('in', 'ex', self.p['J_in'])
 
@@ -515,9 +525,9 @@ class Simulator:
 
     def plot(self):
         import nest.raster_plot
-        nest.raster_plot.from_device(self.spikes_ex, hist=False)
+        nest.raster_plot.from_device(self.spikes_ex, hist=True)
         plt.gcf().savefig(str(self.data_path / 'raster_ex.png'))
-        nest.raster_plot.from_device(self.spikes_in, hist=False)
+        nest.raster_plot.from_device(self.spikes_in, hist=True)
         plt.gcf().savefig(str(self.data_path / 'raster_in.png'))
 
 
@@ -543,3 +553,7 @@ if __name__ == '__main__':
     sim.simulate(progress_bar=True, connfile=connfile)
     import matplotlib.pyplot as plt
     sim.plot()
+
+    fig = plt.figure()
+    sim.connections.weight.hist(bins=100)
+    fig.savefig(str(sim.data_path / 'connectivity.png'))

@@ -41,8 +41,11 @@ parameters = {
     'position'       : 'grid',
     'topology_dim'   : 1,
     'extent'         : 2 * np.pi,
-    'mask_ex_in'     : {'doughnut': {'inner_radius': .5 * np.pi,
-                                     'outer_radius': 1. * np.pi}},
+    'mask_ex_in'     : {'doughnut': {
+                            'inner_radius': .5 * np.pi,
+                            'outer_radius': 1. * np.pi},
+                        "anchor": [0., 0.5]
+                        },
     'mask_in_ex'     : {'circular': {'radius': .1 * np.pi}},
     # Stimulation parameters
     'init_simtime'    : 1000., # ms
