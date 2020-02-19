@@ -186,7 +186,7 @@ class Simulator:
             self.p['mask_ex_in']['doughnut']['outer_radius'] -
             self.p['mask_ex_in']['doughnut']['inner_radius']
         )
-        center_doghnut /= 2
+        center_doghnut = center_doghnut / 2 + self.p['mask_ex_in']['anchor'][1]
         connect_layer(
         'ex', 'in',
         {"gaussian": {

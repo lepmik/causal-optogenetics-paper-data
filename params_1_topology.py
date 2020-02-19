@@ -6,13 +6,14 @@ parameters = {
         'set_nodes',
         'set_connections_topology',
         # 'create_nodes',
+        # 'set_connections_from_file',
         'set_background_ex',
         'set_spike_rec',
         # 'set_state_rec',
         'simulate_trials_branch'
     ],
     'msd'             : 50311, # Master seed
-    'num_threads'     : 4,
+    'num_threads'     : 20,
     'N_neurons'       : 4000,
     'N_ex'            : 3200,
     'N_in'            : 800,
@@ -44,7 +45,7 @@ parameters = {
     'mask_ex_in'     : {'doughnut': {
                             'inner_radius': .5 * np.pi,
                             'outer_radius': 1. * np.pi},
-                        "anchor": [0., 0.5]
+                        "anchor": [0., 0.2]
                         },
     'mask_in_ex'     : {'circular': {'radius': .1 * np.pi}},
     # Stimulation parameters
