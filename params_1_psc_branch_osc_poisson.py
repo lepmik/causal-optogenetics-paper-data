@@ -42,18 +42,19 @@ parameters = {
     'eps_p'           : 0.1, # connection prob
     'rate_p'          : 5., # connection prob
     # Stimulation parameters
-    'init_simtime'    : 1000., # ms
+    'init_simtime'    : 1500., # ms
     'stim_N_ex'       : 1000,
     'stim_N_in'       : 0,
     'stim_isi_min'    : 4.0, # ms
     'post_stimtime'   : 15.0, # ms
     'stim_duration'   : 2.0, # ms
-    'stim_trials'     : 10000, #s
+    'stim_trials'     : 10, #s
     'stim_amp_ex'     : 15.0, # pA
     'stim_amp_in'     : 0.0, # pA
     # AC params
+    'ac_delay'       : 500.,
     'ac_amp'         : 800.,
-    'ac_offset'      : -.2,
+    'ac_offset'      : -.05,
     'ac_freq'        : 10.,
     # Optogenetics
     'I0': 10, # light intensity leaving fibre mW/mm2

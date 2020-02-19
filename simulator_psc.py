@@ -321,19 +321,20 @@ class Simulator:
 
     def set_ac_input(self):
         # Set confounding drive
-        ac = nest.Create(
+        self.ac = nest.Create(
             "ac_generator", 1, params={
                 "offset": self.p['ac_offset'],
                 'amplitude': self.p['ac_amp'],
                 'frequency': self.p['ac_freq']
             }
         )
-        nest.Connect(ac, self.nodes)
+        nest.SetStatus(self.ac, {'origin': self.p['ac_delay']})
+        nest.Connect(self.ac, self.nodes)
 
 
     def set_ac_poisson_input(self):
         # Set confounding drive
-        ac = nest.Create(
+        self.ac = nest.Create(
             'sinusoidal_poisson_generator',
             params={
                 'rate': 0.0,
@@ -341,9 +342,9 @@ class Simulator:
                 'frequency': self.p['ac_freq'],
                 'phase': 0.0,
                 'individual_spike_trains': True})
-
+        nest.SetStatus(self.ac, {'origin': self.p['ac_delay']})
         nest.Connect(
-            ac, self.nodes,
+            self.ac, self.nodes,
             {'rule': 'all_to_all'},
             {"weight": self.p['ac_offset'],  "delay": self.p['delay']})
 
