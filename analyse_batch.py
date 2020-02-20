@@ -16,15 +16,16 @@ z1 = -2
 z2 = -1
 x1 = 1
 x2 = 3
-y1 = 3.5
-y2 = 10
+y1 = 3
+y2 = 7
 yb1 = -4
 yb2 = 0
 
 # fnameout = path / 'conditional_means_3-7.feather'
 # fnameout = path / 'conditional_means_4-10.feather'
 # fnameout = 'conditional_means_z-(3_1)_y(3_7).feather'
-fnameout = 'conditional_means_z-(2_1)_y(35_10).feather'
+# fnameout = 'conditional_means_z-(2_1)_y(35_10).feather'
+fnameout = 'conditional_means_z-(2_1)_y(3_7).feather'
 
 def compute_response(row, stim_times, spikes, a, b):
     senders = spikes.senders
