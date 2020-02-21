@@ -329,7 +329,7 @@ class Simulator:
             }
         )
         nest.SetStatus(self.ac, {'origin': self.p['ac_delay']})
-        nest.Connect(self.ac, self.nodes)
+        nest.Connect(self.ac, self.nodes_ex)
 
 
     def set_ac_poisson_input(self):
@@ -344,9 +344,9 @@ class Simulator:
                 'individual_spike_trains': True})
         nest.SetStatus(self.ac, {'origin': self.p['ac_delay']})
         nest.Connect(
-            self.ac, self.nodes,
+            self.ac, self.nodes_ex,
             {'rule': 'all_to_all'},
-            {"weight": self.p['ac_offset'],  "delay": self.p['delay']})
+            {"weight": self.p['ac_J']})
 
     def compute_stim_amps(self):
         def intensity(z):

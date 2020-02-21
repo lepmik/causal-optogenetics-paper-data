@@ -5,7 +5,7 @@ parameters = {
         'create_nodes',
         'set_background',
         'set_connections_from_file',
-        'set_ac_input',
+        'set_ac_poisson_input',
         'set_spike_rec',
         # 'set_state_rec',
         'simulate_trials'
@@ -34,7 +34,7 @@ parameters = {
     # Connection parameters
     'J_ex'            : .2, # mV
     'eps'             : 0.1, # connection prob
-    'g'               : 5.,
+    'g'               : 7.,
     'J_high'          : 2.0, # max connection strength
     'J_low'           : 0.0,
     'p_var'           : .5, # percentage variation of mean in lognormal dist
@@ -42,18 +42,18 @@ parameters = {
     'eps_p'           : 0.1, # connection prob
     'rate_p'          : 5., # connection prob
     # Stimulation parameters
-    'init_simtime'    : 1500., # ms
+    'init_simtime'    : 1000., # ms
     'stim_N_ex'       : 1000,
     'stim_N_in'       : 0,
     'stim_isi_min'    : 200.0, # ms
     'stim_duration'   : 2.0, # ms
-    'stim_trials'     : 10000, #s
+    'stim_trials'     : 1, #s
     'stim_amp_ex'     : 15.0, # pA
     'stim_amp_in'     : 0.0, # pA
     # AC params
     'ac_delay'       : 500.,
-    'ac_amp'         : .15,
-    'ac_offset'      : -.15,
+    'ac_amp'         : 100.,
+    'ac_J'           : -.5,
     'ac_freq'        : 10.,
     # Optogenetics
     'I0': 10, # light intensity leaving fibre mW/mm2
