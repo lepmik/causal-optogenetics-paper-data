@@ -45,8 +45,8 @@ parameters = {
     'init_simtime'    : 1500., # ms
     'stim_N_ex'       : 1000,
     'stim_N_in'       : 0,
-    'stim_isi_min'    : 4.0, # ms
-    'post_stimtime'   : 15.0, # ms
+    'stim_isi_min'    : 15.0, # ms
+    'post_stimtime'   : 100.0, # ms
     'stim_duration'   : 2.0, # ms
     'stim_trials'     : 10, #s
     'stim_amp_ex'     : 15.0, # pA
