@@ -54,7 +54,7 @@ parameters = {
     # AC params
     'ac_delay'       : 500.,
     'ac_amp'         : 800.,
-    'ac_offset'      : -.05,
+    'ac_J'           : -.05,
     'ac_freq'        : 10.,
     # Optogenetics
     'I0': 10, # light intensity leaving fibre mW/mm2
