@@ -42,12 +42,12 @@ parameters = {
     'rate_p'          : 5., # connection prob
     # Stimulation parameters
     'init_simtime'    : 500., # ms
-    'stim_N_ex'       : 1000,
+    'stim_N_ex'       : 100,
     'stim_N_in'       : 0,
     'stim_isi_min'    : 200.0, # ms
     'stim_duration'   : 2.0, # ms
     'stim_trials'     : 10000, #s
-    'stim_amp_ex'     : 15.0, # pA
+    'stim_amp_ex'     : 10.0, # pA
     'stim_amp_in'     : 0.0, # pA
     # Optogenetics
     'I0': 10, # light intensity leaving fibre mW/mm2

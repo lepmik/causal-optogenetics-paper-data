@@ -3,6 +3,7 @@ import pathlib
 import nest
 import nest.topology as tp
 import pandas as pd
+import feather
 import os
 import json
 import time
@@ -120,7 +121,7 @@ class Simulator:
         self.nodes = self.nodes_ex + self.nodes_in
 
     def set_connections_from_file(self, filename):
-        self.connections = pd.read_feather(filename)
+        self.connections = feather.read_dataframe(filename)
         nest.Connect(
             self.connections.source.values, self.connections.target.values,
             conn_spec={'rule': 'one_to_one'},

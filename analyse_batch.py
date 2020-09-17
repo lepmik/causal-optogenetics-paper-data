@@ -10,7 +10,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 # Initialization
-pandarallel.initialize(progress_bar=False)
+pandarallel.initialize(progress_bar=False, use_memory_fs=False)
 
 z1 = -2
 z2 = 0
@@ -34,7 +34,7 @@ yb2 = y2 - shift
 # fnameout = 'conditional_means_z-(2_1)_y(35_10).feather'
 # fnameout = 'conditional_means_z-(2_1)_y(3_7).feather'
 # fnameout = 'conditional_means_z-(2_1)_y(3_10).feather'
-fnameout = 'conditional_means_z-(2_0)_y(3_10).feather'
+fnameout = f'conditional_means_x({x1}-{x2})_z({z1}-{z2})_y({y1}-{y2}).feather'
 
 def compute_response(row, stim_times, spikes, a, b):
     senders = spikes.senders
