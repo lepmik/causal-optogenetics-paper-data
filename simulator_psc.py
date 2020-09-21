@@ -389,7 +389,7 @@ class Simulator:
         nodes_permute = np.random.permutation(self.nodes_ex)
         self.stim_amps = {
             n: self.p['stim_amp_ex']
-            for n in nodes_permute[idx:self.p['stim_N_ex']]
+            for n in nodes_permute[:self.p['stim_N_ex']]
         }
 
     def assign_stim_amps(self, stim_amps):
