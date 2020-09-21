@@ -47,7 +47,7 @@ parameters = {
     'stim_isi_min'    : 200.0, # ms
     'stim_duration'   : 2.0, # ms
     'stim_trials'     : 10000, #s
-    'stim_amp_ex'     : 10.0, # pA
+    'stim_amp_ex'     : 20.0, # pA
     'stim_amp_in'     : 0.0, # pA
     # Optogenetics
     'I0': 10, # light intensity leaving fibre mW/mm2
