@@ -385,6 +385,13 @@ class Simulator:
             amp = A[i] * self.p['stim_amp_ex']
             self.stim_amps.update({n: amp for n in nodes})
 
+    def compute_stim_amps_constant(self):
+        nodes_permute = np.random.permutation(self.nodes_ex)
+        self.stim_amps = {
+            n: self.p['stim_amp_ex']
+            for n in nodes_permute[idx:self.p['stim_N_ex']]
+        }
+
     def assign_stim_amps(self, stim_amps):
         self.stim_generators = []
         for n, amp in stim_amps.items():
@@ -406,7 +413,8 @@ class Simulator:
         nest.Simulate(self.p['init_simtime'])
 
         if stim_amps is None:
-            self.compute_stim_amps()
+            # self.compute_stim_amps()
+            self.compute_stim_amps_constant()
         else:
             self.stim_amps = stim_amps
         self.assign_stim_amps(self.stim_amps)

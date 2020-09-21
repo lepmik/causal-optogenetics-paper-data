@@ -8,6 +8,6 @@ neo
 elephant
 pandas
 quantities
-jupyter
-ipython
-cython
+jupyterlab
+pyarrow
+statsmodels
