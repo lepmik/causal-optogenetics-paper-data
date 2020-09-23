@@ -34,7 +34,7 @@ parameters = {
     # Connection parameters
     'J_ex'            : .2, # mV
     'eps'             : 0.1, # connection prob
-    'g'               : 5.,
+    'g'               : 7.,
     'J_high'          : 2.0, # max connection strength
     'J_low'           : 0.0,
     'p_var'           : .5, # percentage variation of mean in lognormal dist
@@ -42,13 +42,13 @@ parameters = {
     'eps_p'           : 0.1, # connection prob
     'rate_p'          : 5., # connection prob
     # Stimulation parameters
-    'init_simtime'    : 1500., # ms
-    'stim_N_ex'       : 1000,
+    'init_simtime'    : 500., # ms
+    'stim_N_ex'       : 100,
     'stim_N_in'       : 0,
     'stim_isi_min'    : 200.0, # ms
     'stim_duration'   : 2.0, # ms
     'stim_trials'     : 10000, #s
-    'stim_amp_ex'     : 15.0, # pA
+    'stim_amp_ex'     : 10.0, # pA
     'stim_amp_in'     : 0.0, # pA
     # AC params
     'ac_delay'       : 500.,
