@@ -354,7 +354,7 @@ class Simulator:
         rate_times = np.arange(self.p['ac_delay'], approx_simtime, self.p['ac_period'])
         rate_times = rate_times + np.random.uniform(-20, 20, len(rate_times))
         rate_times = rate_times.round(1)
-        rate_values = np.zeros(len(a))
+        rate_values = np.zeros(len(rate_times))
         rate_values[::-2] = self.p['ac_rate']
         rate_values[-1] = 0 # zero when simtime > approx_simtime
         self.ac = nest.Create(
