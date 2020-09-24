@@ -335,15 +335,33 @@ class Simulator:
 
     def set_ac_poisson_input(self):
         # Set confounding drive
+        # self.ac = nest.Create(
+        #     'sinusoidal_poisson_generator',
+        #     params={
+        #         'rate': 0.0,
+        #         'amplitude': self.p['ac_amp'],
+        #         'frequency': self.p['ac_freq'],
+        #         'phase': 0.0,
+        #         'individual_spike_trains': True})
+        # nest.SetStatus(self.ac, {'origin': self.p['ac_delay']})
+        # nest.Connect(
+        #     self.ac, self.nodes_ex,
+        #     {'rule': 'all_to_all'},
+        #     {"weight": self.p['ac_J']})
+        approx_simtime = (self.p['init_simtime'] +
+            self.p['stim_trials'] * self.p['stim_isi_min'] +
+            self.p['stim_trials'] * 10)
+        rate_times = np.arange(self.p['ac_delay'], approx_simtime, self.p['ac_period'])
+        rate_times = rate_times + np.random.uniform(-20, 20, len(rate_times))
+        rate_times = rate_times.round(1)
+        rate_values = np.zeros(len(a))
+        rate_values[::-2] = self.p['ac_rate']
+        rate_values[-1] = 0 # zero when simtime > approx_simtime
         self.ac = nest.Create(
-            'sinusoidal_poisson_generator',
+            'inhomogeneous_poisson_generator',
             params={
-                'rate': 0.0,
-                'amplitude': self.p['ac_amp'],
-                'frequency': self.p['ac_freq'],
-                'phase': 0.0,
-                'individual_spike_trains': True})
-        nest.SetStatus(self.ac, {'origin': self.p['ac_delay']})
+                'rate_times': rate_times,
+                'rate_values': rate_values})
         nest.Connect(
             self.ac, self.nodes_ex,
             {'rule': 'all_to_all'},
