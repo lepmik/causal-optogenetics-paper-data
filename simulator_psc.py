@@ -369,7 +369,7 @@ class Simulator:
     def set_stim_dependent_poisson_input(self):
         if not hasattr(self, 'stim_times'):
             self.compute_stim_times()
-        rate_times = np.random.sample(
+        rate_times = np.random.choice(
             self.stim_times, int(len(self.stim_times) / 2))
         rate_times = np.sort(np.concatenate((rate_times - 20, rate_times + 20)))
         rate_values = np.zeros(len(rate_times))
