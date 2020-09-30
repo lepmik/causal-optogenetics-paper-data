@@ -332,7 +332,6 @@ class Simulator:
         nest.SetStatus(self.ac, {'origin': self.p['ac_delay']})
         nest.Connect(self.ac, self.nodes_ex)
 
-
     def set_ac_poisson_input(self):
         # Set confounding drive
         # self.ac = nest.Create(
@@ -349,11 +348,28 @@ class Simulator:
         #     {'rule': 'all_to_all'},
         #     {"weight": self.p['ac_J']})
         approx_simtime = (self.p['init_simtime'] +
-            self.p['stim_trials'] * self.p['stim_isi_min'] +
-            self.p['stim_trials'] * 10)
-        rate_times = np.arange(self.p['ac_delay'], approx_simtime, self.p['ac_period'])
+            self.p['stim_trials'] * self.p['stim_isi_min'])
+        rate_times = np.arange(
+            self.p['ac_delay'], approx_simtime, self.p['ac_period'])
         rate_times = rate_times + np.random.uniform(-20, 20, len(rate_times))
         rate_times = rate_times.round(1)
+        rate_values = np.zeros(len(rate_times))
+        rate_values[::-2] = self.p['ac_rate']
+        rate_values[-1] = 0 # zero when simtime > approx_simtime
+        self.ac = nest.Create(
+            'inhomogeneous_poisson_generator',
+            params={
+                'rate_times': rate_times,
+                'rate_values': rate_values})
+        nest.Connect(
+            self.ac, self.nodes_ex,
+            {'rule': 'all_to_all'},
+            {"weight": self.p['ac_J']})
+
+    def set_stim_dependent_poisson_input(self):
+        rate_times = np.random.sample(
+            self.stim_times, int(len(self.stim_times) / 2))
+        rate_times = np.sort(np.concatenate((rate_times - 20, rate_times + 20)))
         rate_values = np.zeros(len(rate_times))
         rate_values[::-2] = self.p['ac_rate']
         rate_values[-1] = 0 # zero when simtime > approx_simtime
@@ -421,7 +437,16 @@ class Simulator:
             nest.Connect(stim, (n,))
             self.stim_generators.append(stim)
 
-    def simulate_trials(self, progress_bar=False, stim_amps=None):
+    def compute_stim_times(self):
+        self.stim_times = [self.p['init_simtime']]
+        for i in progress_bar(range(self.p['stim_trials'])):
+            self.stim_times.append(
+                self.stim_times[i] +
+                self.p['stim_isi_min'] +
+                round(np.random.uniform(-20, 20), 1)
+            )
+
+    def simulate_trials(self, progress_bar=False):
         if progress_bar:
             if not callable(progress_bar):
                 progress_bar = tqdm
@@ -430,22 +455,14 @@ class Simulator:
 
         nest.Simulate(self.p['init_simtime'])
 
-        if stim_amps is None:
-            # self.compute_stim_amps()
-            self.compute_stim_amps_constant()
-        else:
-            self.stim_amps = stim_amps
         self.assign_stim_amps(self.stim_amps)
 
-        self.stim_times = []
-        for _ in progress_bar(range(self.p['stim_trials'])):
-            stim_time = nest.GetKernelStatus()['time']
-            self.stim_times.append(stim_time)
+        for i, stim_time in progress_bar(enumerate(self.stim_times)):
             for stim in self.stim_generators:
                 nest.SetStatus(stim, {'origin': stim_time})
-            nest.Simulate(self.p['stim_isi_min'] + round(np.random.uniform(0, 20), 1))
+            nest.Simulate(self.stim_times[i+1] - stim_time)
 
-    def simulate_trials_branch(self, progress_bar=False, stim_amps=None):
+    def simulate_trials_branch(self, progress_bar=False):
         if progress_bar:
             if not callable(progress_bar):
                 progress_bar = tqdm
@@ -454,10 +471,6 @@ class Simulator:
 
         nest.Simulate(self.p['init_simtime'])
 
-        if stim_amps is None:
-            self.compute_stim_amps()
-        else:
-            self.stim_amps = stim_amps
         self.assign_stim_amps(self.stim_amps)
 
         def get_status(nodes):
@@ -484,8 +497,13 @@ class Simulator:
             if setup == 'set_connections_from_file':
                 assert connfile is not None
                 getattr(self, setup)(connfile)
-            elif 'simulate_trials' in setup:
+            elif setup in ['simulate_trials', 'simulate_trials_branch']:
                 getattr(self, setup)(progress_bar=progress_bar, stim_amps=stim_amps)
+            elif setup in ['compute_stim_amps', 'compute_stim_amps_constant']:
+                if stim_amps is None:
+                    getattr(self, setup)()
+                else:
+                    self.stim_amps = stim_amps
             else:
                 getattr(self, setup)()
         # self.set_kernel()

@@ -3,6 +3,7 @@ parameters = {
         'set_kernel',
         'set_nodes',
         'create_nodes',
+        'compute_stim_amps_constant',
         'set_background',
         'set_connections_from_file',
         'set_ac_input',

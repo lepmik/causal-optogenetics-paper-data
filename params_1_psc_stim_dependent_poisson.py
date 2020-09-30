@@ -6,6 +6,7 @@ parameters = {
         'compute_stim_amps_constant',
         'set_background',
         'set_connections_from_file',
+        'set_stim_dependent_poisson_input',
         'set_spike_rec',
         # 'set_state_rec',
         'simulate_trials'
@@ -48,8 +49,13 @@ parameters = {
     'stim_isi_min'    : 200.0, # ms
     'stim_duration'   : 2.0, # ms
     'stim_trials'     : 10000, #s
-    'stim_amp_ex'     : 20.0, # pA
+    'stim_amp_ex'     : 10.0, # pA
     'stim_amp_in'     : 0.0, # pA
+    # AC params
+    'ac_delay'       : 500.,
+    'ac_rate'        : 100.,
+    'ac_J'           : -.5,
+    'ac_period'      : 100.,
     # Optogenetics
     'I0': 10, # light intensity leaving fibre mW/mm2
     'r': 100e-3, # 100 um radius of fiber
