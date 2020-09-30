@@ -506,7 +506,7 @@ class Simulator:
                 assert connfile is not None
                 getattr(self, setup)(connfile)
             elif setup in ['simulate_trials', 'simulate_trials_branch']:
-                getattr(self, setup)(progress_bar=progress_bar, stim_amps=stim_amps)
+                getattr(self, setup)(progress_bar=progress_bar)
             elif setup in ['compute_stim_amps', 'compute_stim_amps_constant']:
                 if stim_amps is None:
                     getattr(self, setup)()
