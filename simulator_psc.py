@@ -367,6 +367,8 @@ class Simulator:
             {"weight": self.p['ac_J']})
 
     def set_stim_dependent_poisson_input(self):
+        if not hasattr(self. 'stim_times'):
+            self.compute_stim_times()
         rate_times = np.random.sample(
             self.stim_times, int(len(self.stim_times) / 2))
         rate_times = np.sort(np.concatenate((rate_times - 20, rate_times + 20)))
@@ -453,6 +455,9 @@ class Simulator:
         else:
             progress_bar = lambda x: x
 
+        if not hasattr(self. 'stim_times'):
+            self.compute_stim_times()
+
         nest.Simulate(self.p['init_simtime'])
 
         self.assign_stim_amps(self.stim_amps)
@@ -469,6 +474,9 @@ class Simulator:
         else:
             progress_bar = lambda x: x
 
+        if not hasattr(self. 'stim_times'):
+            self.compute_stim_times()
+
         nest.Simulate(self.p['init_simtime'])
 
         self.assign_stim_amps(self.stim_amps)
@@ -479,7 +487,7 @@ class Simulator:
             return status
 
         status = get_status(self.nodes)
-        self.stim_times = []
+        self.stim_times = [] # TODO fix
         for i in progress_bar(range(self.p['stim_trials'])):
             if i > 0:
                 nest.SetStatus(self.nodes, status)
