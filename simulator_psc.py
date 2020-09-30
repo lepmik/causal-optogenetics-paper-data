@@ -462,10 +462,13 @@ class Simulator:
 
         self.assign_stim_amps(self.stim_amps)
 
-        for i, stim_time in progress_bar(enumerate(self.stim_times)):
+        for i, stim_time in progress_bar(enumerate(self.stim_times[:-1])):
             for stim in self.stim_generators:
                 nest.SetStatus(stim, {'origin': stim_time})
             nest.Simulate(self.stim_times[i+1] - stim_time)
+        for stim in self.stim_generators:
+            nest.SetStatus(stim, {'origin': self.stim_times[-1]})
+        nest.Simulate(self.p['stim_isi_min'])
 
     def simulate_trials_branch(self, progress_bar=False):
         if progress_bar:
