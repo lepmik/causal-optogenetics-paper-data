@@ -441,7 +441,7 @@ class Simulator:
 
     def compute_stim_times(self):
         self.stim_times = [self.p['init_simtime']]
-        for i in progress_bar(range(self.p['stim_trials'])):
+        for i in range(self.p['stim_trials']):
             self.stim_times.append(
                 self.stim_times[i] +
                 self.p['stim_isi_min'] +
