@@ -449,20 +449,21 @@ class Simulator:
             )
 
     def simulate_trials(self, progress_bar=False):
+        if not hasattr(self, 'stim_times'):
+            self.compute_stim_times()
+
         if progress_bar:
             if not callable(progress_bar):
                 progress_bar = tqdm
         else:
             progress_bar = lambda x: x
 
-        if not hasattr(self, 'stim_times'):
-            self.compute_stim_times()
-
         nest.Simulate(self.p['init_simtime'])
 
         self.assign_stim_amps(self.stim_amps)
 
-        for i, stim_time in progress_bar(enumerate(self.stim_times[:-1])):
+        for i in progress_bar(range(len(self.stim_times) - 1)):
+            stim_time = self.stim_times[i]
             for stim in self.stim_generators:
                 nest.SetStatus(stim, {'origin': stim_time})
             nest.Simulate(self.stim_times[i+1] - stim_time)
