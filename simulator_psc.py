@@ -371,10 +371,9 @@ class Simulator:
             self.compute_stim_times()
         rate_times = np.random.permutation(
             self.stim_times)[:int(len(self.stim_times) / 2)]
-        rate_times = np.sort(np.concatenate(([1], rate_times - 20, rate_times + 20)))
+        rate_times = np.sort(np.concatenate((rate_times - 20, rate_times + 20)))
         rate_values = np.zeros(len(rate_times))
-        rate_values[::-2] = self.p['ac_rate']
-        rate_values[-1] = 0 # zero when simtime > approx_simtime
+        rate_values[::2] = self.p['ac_rate']
         self.ac = nest.Create(
             'inhomogeneous_poisson_generator',
             params={
